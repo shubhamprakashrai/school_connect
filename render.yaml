@@ -1,0 +1,56 @@
+services:
+  - type: web
+    name: school-connect
+    runtime: docker
+    plan: free
+    region: singapore
+    healthCheckPath: /api/actuator/health
+    envVars:
+      # Spring profile for production
+      - key: SPRING_PROFILES_ACTIVE
+        value: production
+
+      # Database connection details from Render's managed DB
+      - key: SPRING_DATASOURCE_URL
+        fromDatabase:
+          name: schoolconnectdb
+          property: connectionString
+
+      - key: SPRING_DATASOURCE_USERNAME
+        fromDatabase:
+          name: schoolconnectdb
+          property: user
+
+      - key: SPRING_DATASOURCE_PASSWORD
+        fromDatabase:
+          name: schoolconnectdb
+          property: password
+
+      # Explicit JDBC driver & Hibernate dialect (for Spring Boot auto-config)
+      - key: SPRING_DATASOURCE_DRIVER_CLASS_NAME
+        value: org.postgresql.Driver
+
+      - key: SPRING_JPA_DATABASE_PLATFORM
+        value: org.hibernate.dialect.PostgreSQLDialect
+
+      # Optional: keep Hibernate schema update enabled for dev/demo
+      - key: SPRING_JPA_HIBERNATE_DDL_AUTO
+        value: update
+
+      # Optional: ensure SSL for Render Postgres
+      - key: SPRING_DATASOURCE_URL
+        fromDatabase:
+          name: schoolconnectdb
+          property: connectionString
+        # Append ?sslmode=require automatically
+        # NOTE: If your app doesn’t auto-append, you can instead override with:
+        # value: jdbc:postgresql://<host>:5432/<db>?sslmode=require
+
+databases:
+  - name: schoolconnectdb
+    plan: free
+    region: singapore
+    databaseName: school_connect
+    user: school_connect_user
+    ipAllowList:
+      - source: 0.0.0.0/0
