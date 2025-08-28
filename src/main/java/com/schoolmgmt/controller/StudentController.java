@@ -75,17 +75,6 @@ public class StudentController {
         return ResponseEntity.ok(students);
     }
 
-    @PostMapping("/{studentId}/promote")
-    @Operation(summary = "Promote student", description = "Promote student to next class")
-    @PreAuthorize("hasAnyRole('ADMIN', 'SUPER_ADMIN')")
-    public ResponseEntity<StudentResponse> promoteStudent(
-            @PathVariable UUID studentId,
-            @Valid @RequestBody PromoteStudentRequest request) {
-        log.info("Promoting student: {} to class: {}", studentId, request.getNewClassId());
-        StudentResponse response = studentService.promoteStudent(studentId, request);
-        return ResponseEntity.ok(response);
-    }
-
     @PatchMapping("/{studentId}/status")
     @Operation(summary = "Update student status", description = "Update student status (ACTIVE, INACTIVE, etc.)")
     @PreAuthorize("hasAnyRole('ADMIN', 'SUPER_ADMIN')")
@@ -135,7 +124,7 @@ public class StudentController {
     }
 
     @GetMapping("/search")
-    @Operation(summary = "Search students", description = "Search students by name or admission number")
+    @Operation(summary = "Search students", description = "Search students by name or roll number")
     @PreAuthorize("hasAnyRole('ADMIN', 'SUPER_ADMIN', 'TEACHER')")
     public ResponseEntity<Page<StudentResponse>> searchStudents(
             @RequestParam String query,

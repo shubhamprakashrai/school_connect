@@ -54,13 +54,12 @@ public class AuthenticationService {
      */
     public AuthResponse authenticate(LoginRequest request) {
         try {
-            // Set tenant context for authentication
-            TenantContext.setCurrentTenant(request.getTenantId());
-            
-            // Find user
-            User user = userRepository.findByUsernameOrEmailAndTenantId(
-                request.getUsername(), request.getTenantId())
+            // Find user across all tenants
+            User user = userRepository.findByUsernameOrEmail(request.getUsername())
                 .orElseThrow(() -> new UsernameNotFoundException("Invalid credentials"));
+            
+            // Set tenant context based on user's tenant
+            TenantContext.setCurrentTenant(user.getTenantId());
             
             // Check if account is locked
             if (!user.isAccountNonLocked()) {
@@ -102,7 +101,7 @@ public class AuthenticationService {
             userRepository.updateLastLogin(user.getId(), LocalDateTime.now());
             
             // Generate tokens
-            String accessToken = jwtService.generateToken(user, request.getTenantId(), user.getPrimaryRole().name());
+            String accessToken = jwtService.generateToken(user, user.getTenantId(), user.getPrimaryRole().name());
             String refreshToken = jwtService.generateRefreshToken(user);
             
             // Build response
@@ -113,7 +112,7 @@ public class AuthenticationService {
                 .firstName(user.getFirstName())
                 .lastName(user.getLastName())
                 .role(user.getPrimaryRole().name())
-                .tenantId(request.getTenantId())
+                .tenantId(user.getTenantId())
                 .emailVerified(user.isEmailVerified())
                 .mfaEnabled(user.isMfaEnabled())
                 .build();
@@ -255,11 +254,12 @@ public class AuthenticationService {
      * Initiate password reset
      */
     public void initiatePasswordReset(PasswordResetRequest request) {
-        try {
-            TenantContext.setCurrentTenant(request.getTenantId());
-            
-            userRepository.findByEmailAndTenantId(request.getEmail(), request.getTenantId())
-                .ifPresent(user -> {
+        // Find user by email across all tenants
+        userRepository.findByEmail(request.getEmail())
+            .ifPresent(user -> {
+                try {
+                    TenantContext.setCurrentTenant(user.getTenantId());
+                    
                     String resetToken = generateToken();
                     LocalDateTime expiry = LocalDateTime.now().plusHours(1);
                     
@@ -267,11 +267,11 @@ public class AuthenticationService {
                     emailService.sendPasswordResetEmail(user, resetToken);
                     
                     log.info("Password reset initiated for: {}", user.getEmail());
-                });
-            // Don't reveal if email exists or not
-        } finally {
-            TenantContext.clear();
-        }
+                } finally {
+                    TenantContext.clear();
+                }
+            });
+        // Don't reveal if email exists or not
     }
     
     /**

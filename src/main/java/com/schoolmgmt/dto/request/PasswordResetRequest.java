@@ -19,8 +19,4 @@ public class PasswordResetRequest {
     @Email(message = "Invalid email format")
     @Schema(description = "Email address", example = "john.doe@school.com")
     private String email;
-    
-    @NotBlank(message = "Tenant ID is required")
-    @Schema(description = "Tenant identifier", example = "public")
-    private String tenantId;
 }

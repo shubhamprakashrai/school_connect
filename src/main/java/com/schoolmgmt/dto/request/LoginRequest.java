@@ -22,10 +22,6 @@ public class LoginRequest {
     @Schema(description = "User password", example = "SecurePass123!")
     private String password;
     
-    @NotBlank(message = "Tenant ID is required")
-    @Schema(description = "Tenant identifier", example = "public")
-    private String tenantId;
-    
     @Schema(description = "Remember me flag for extended session", example = "false")
     private boolean rememberMe;
 }

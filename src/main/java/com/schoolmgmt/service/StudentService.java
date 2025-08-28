@@ -3,9 +3,7 @@ package com.schoolmgmt.service;
 
 import com.schoolmgmt.dto.common.EmergencyContact;
 import com.schoolmgmt.dto.common.ParentInfo;
-import com.schoolmgmt.dto.common.TransportInfo;
 import com.schoolmgmt.dto.request.CreateStudentRequest;
-import com.schoolmgmt.dto.request.PromoteStudentRequest;
 import com.schoolmgmt.dto.request.StudentFilterRequest;
 import com.schoolmgmt.dto.request.UpdateStudentRequest;
 import com.schoolmgmt.dto.response.StudentResponse;
@@ -48,11 +46,6 @@ public class StudentService {
     public StudentResponse createStudent(CreateStudentRequest request) {
         String tenantId = TenantContext.requireCurrentTenant();
 
-        // Validate admission number uniqueness
-        if (studentRepository.existsByAdmissionNumberAndTenantId(request.getAdmissionNumber(), tenantId)) {
-            throw new BusinessException("Admission number already exists: " + request.getAdmissionNumber());
-        }
-
         // Validate roll number uniqueness in class
         if (studentRepository.existsByRollNumberAndCurrentClassIdAndTenantId(
                 request.getRollNumber(), request.getCurrentClassId(), tenantId)) {
@@ -61,14 +54,12 @@ public class StudentService {
 
         // Create student entity
         Student student = Student.builder()
-                .admissionNumber(request.getAdmissionNumber())
                 .rollNumber(request.getRollNumber())
                 .firstName(request.getFirstName())
                 .middleName(request.getMiddleName())
                 .lastName(request.getLastName())
                 .dateOfBirth(request.getDateOfBirth())
                 .gender(Student.Gender.valueOf(request.getGender()))
-                .bloodGroup(request.getBloodGroup())
                 .email(request.getEmail())
                 .phone(request.getPhone())
                 .address(request.getAddress())
@@ -81,8 +72,6 @@ public class StudentService {
                 .admissionDate(request.getAdmissionDate())
                 .previousSchool(request.getPreviousSchool())
                 .status(Student.StudentStatus.ACTIVE)
-                .feeCategory(request.getFeeCategory())
-                .scholarshipApplicable(request.getScholarshipApplicable())
                 .build();
 
         // Set parent information
@@ -116,25 +105,17 @@ public class StudentService {
         // Set medical information
         if (request.getMedicalInfo() != null) {
             student.setMedicalConditions(request.getMedicalInfo().getMedicalConditions());
-            student.setAllergies(request.getMedicalInfo().getAllergies());
-            student.setEmergencyMedication(request.getMedicalInfo().getEmergencyMedication());
             student.setDoctorName(request.getMedicalInfo().getDoctorName());
-            student.setDoctorPhone(request.getMedicalInfo().getDoctorPhone());
         }
 
-        // Set transport information
-        if (request.getTransportInfo() != null) {
-            student.setTransportMode(request.getTransportInfo().getTransportMode());
-            student.setTransportRouteId(request.getTransportInfo().getTransportRouteId());
-            student.setPickupPoint(request.getTransportInfo().getPickupPoint());
-        }
+
 
         student.setTenantId(tenantId);
 
         // STEP 1: Save student first to get the generated ID
         Student savedStudent = studentRepository.save(student);
         log.info("Student created: {} - {} in tenant: {}",
-                savedStudent.getAdmissionNumber(), savedStudent.getFullName(), tenantId);
+                savedStudent.getRollNumber(), savedStudent.getFullName(), tenantId);
 
         // STEP 2: Create user account after student is saved (if requested)
         if (request.isCreateUserAccount() && request.getEmail() != null) {
@@ -144,10 +125,10 @@ public class StudentService {
 
                 // Update student with user reference
                 savedStudent = studentRepository.save(savedStudent);
-                log.info("User account created for student: {}", savedStudent.getAdmissionNumber());
+                log.info("User account created for student: {}", savedStudent.getRollNumber());
 
             } catch (Exception e) {
-                log.error("Failed to create user account for student: {}", savedStudent.getAdmissionNumber(), e);
+                log.error("Failed to create user account for student: {}", savedStudent.getRollNumber(), e);
                 // Student is already created, but user creation failed
                 // You might want to handle this scenario based on your business logic
                 // Option 1: Continue without user account
@@ -201,9 +182,6 @@ public class StudentService {
         if (request.getPostalCode() != null) {
             student.setPostalCode(request.getPostalCode());
         }
-        if (request.getBloodGroup() != null) {
-            student.setBloodGroup(request.getBloodGroup());
-        }
         if (request.getPhotoUrl() != null) {
             student.setPhotoUrl(request.getPhotoUrl());
         }
@@ -211,21 +189,11 @@ public class StudentService {
         // Update medical information
         if (request.getMedicalInfo() != null) {
             student.setMedicalConditions(request.getMedicalInfo().getMedicalConditions());
-            student.setAllergies(request.getMedicalInfo().getAllergies());
-            student.setEmergencyMedication(request.getMedicalInfo().getEmergencyMedication());
             student.setDoctorName(request.getMedicalInfo().getDoctorName());
-            student.setDoctorPhone(request.getMedicalInfo().getDoctorPhone());
-        }
-
-        // Update transport information
-        if (request.getTransportInfo() != null) {
-            student.setTransportMode(request.getTransportInfo().getTransportMode());
-            student.setTransportRouteId(request.getTransportInfo().getTransportRouteId());
-            student.setPickupPoint(request.getTransportInfo().getPickupPoint());
         }
 
         Student updatedStudent = studentRepository.save(student);
-        log.info("Student updated: {} - {}", updatedStudent.getAdmissionNumber(), updatedStudent.getFullName());
+        log.info("Student updated: {} - {}", updatedStudent.getRollNumber(), updatedStudent.getFullName());
 
         return toStudentResponse(updatedStudent);
     }
@@ -280,7 +248,7 @@ public class StudentService {
                 spec = spec.and((root, query, cb) -> cb.or(
                     cb.like(cb.lower(root.get("firstName")), searchTerm),
                     cb.like(cb.lower(root.get("lastName")), searchTerm),
-                    cb.like(cb.lower(root.get("admissionNumber")), searchTerm)
+                    cb.like(cb.lower(root.get("rollNumber")), searchTerm)
                 ));
             }
         }
@@ -306,7 +274,7 @@ public class StudentService {
         Student.StudentStatus studentStatus = Student.StudentStatus.valueOf(status.toUpperCase());
         studentRepository.updateStatus(studentId, studentStatus);
         
-        log.info("Student status updated: {} to {}", student.getAdmissionNumber(), status);
+        log.info("Student status updated: {} to {}", student.getRollNumber(), status);
     }
 
     /**
@@ -326,47 +294,7 @@ public class StudentService {
         student.softDelete(tenantId);
         studentRepository.save(student);
         
-        log.info("Student soft deleted: {}", student.getAdmissionNumber());
-    }
-
-    /**
-     * Promote student to next class
-     */
-    public StudentResponse promoteStudent(UUID studentId, PromoteStudentRequest request) {
-        String tenantId = TenantContext.requireCurrentTenant();
-        
-        Student student = studentRepository.findById(studentId)
-                .orElseThrow(() -> new ResourceNotFoundException("Student", "id", studentId));
-        
-        // Verify tenant access
-        if (!student.getTenantId().equals(tenantId)) {
-            throw new ResourceNotFoundException("Student", "id", studentId);
-        }
-        
-        // Check if new roll number is unique in the new class
-        if (request.getNewRollNumber() != null && 
-            studentRepository.existsByRollNumberAndCurrentClassIdAndTenantId(
-                request.getNewRollNumber(), request.getNewClassId(), tenantId)) {
-            throw new BusinessException("Roll number already exists in the target class");
-        }
-        
-        // Promote student
-        studentRepository.promoteStudent(
-            studentId,
-            request.getNewClassId(),
-            request.getNewSectionId(),
-            request.getPromotionStatus()
-        );
-        
-        // Update roll number if provided
-        if (request.getNewRollNumber() != null) {
-            student.setRollNumber(request.getNewRollNumber());
-            studentRepository.save(student);
-        }
-        
-        log.info("Student promoted: {} to class: {}", student.getAdmissionNumber(), request.getNewClassId());
-        
-        return getStudentById(studentId);
+        log.info("Student soft deleted: {}", student.getRollNumber());
     }
 
     /**
@@ -510,18 +438,8 @@ public class StudentService {
                 .phone(student.getEmergencyContactPhone())
                 .build();
         
-        TransportInfo transportInfo = null;
-        if (student.getTransportMode() != null) {
-            transportInfo = TransportInfo.builder()
-                    .transportMode(student.getTransportMode())
-                    .transportRouteId(student.getTransportRouteId())
-                    .pickupPoint(student.getPickupPoint())
-                    .build();
-        }
-        
         return StudentResponse.builder()
                 .id(student.getId().toString())
-                .admissionNumber(student.getAdmissionNumber())
                 .rollNumber(student.getRollNumber())
                 .firstName(student.getFirstName())
                 .middleName(student.getMiddleName())
@@ -529,7 +447,6 @@ public class StudentService {
                 .fullName(student.getFullName())
                 .dateOfBirth(student.getDateOfBirth())
                 .gender(student.getGender().name())
-                .bloodGroup(student.getBloodGroup())
                 .email(student.getEmail())
                 .phone(student.getPhone())
                 .address(student.getAddress())
@@ -545,8 +462,6 @@ public class StudentService {
                 .motherInfo(motherInfo)
                 .guardianInfo(guardianInfo)
                 .emergencyContact(emergencyContact)
-                .transportInfo(transportInfo)
-                .age(student.getAge())
                 .build();
     }
 }

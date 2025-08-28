@@ -20,11 +20,6 @@ import java.time.LocalDate;
 @Schema(description = "Create student request")
 public class CreateStudentRequest {
     
-    @NotBlank(message = "Admission number is required")
-    @Size(max = 50)
-    @Schema(description = "Unique admission number", example = "ADM2024001")
-    private String admissionNumber;
-    
     @NotBlank(message = "Roll number is required")
     @Size(max = 20)
     @Schema(description = "Roll number in class", example = "001")
@@ -54,8 +49,7 @@ public class CreateStudentRequest {
     @Schema(description = "Gender", example = "MALE")
     private String gender;
     
-    @Schema(description = "Blood group", example = "O+")
-    private String bloodGroup;
+
     
     @Email(message = "Invalid email format")
     @Schema(description = "Email address", example = "john.doe@example.com")
@@ -111,14 +105,7 @@ public class CreateStudentRequest {
     @Schema(description = "Medical information")
     private MedicalInfo medicalInfo;
     
-    @Schema(description = "Transport information")
-    private TransportInfo transportInfo;
-    
-    @Schema(description = "Fee category", example = "GENERAL")
-    private String feeCategory;
-    
-    @Schema(description = "Scholarship applicable", example = "false")
-    private Boolean scholarshipApplicable;
+
     
     @Schema(description = "Create user account for student", example = "true")
     private boolean createUserAccount = false;

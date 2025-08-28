@@ -42,7 +42,7 @@ public class AuthenticationController {
         @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "403", description = "Account locked or inactive")
     })
     public ResponseEntity<AuthResponse> login(@Valid @RequestBody LoginRequest request) {
-        log.info("Login attempt for user: {} in tenant: {}", request.getUsername(), request.getTenantId());
+        log.info("Login attempt for user: {}", request.getUsername());
         AuthResponse response = authenticationService.authenticate(request);
         return ResponseEntity.ok(response);
     }
@@ -96,7 +96,7 @@ public class AuthenticationController {
         @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "400", description = "Invalid input")
     })
     public ResponseEntity<ApiResponse> forgotPassword(@Valid @RequestBody PasswordResetRequest request) {
-        log.info("Password reset requested for email: {} in tenant: {}", request.getEmail(), request.getTenantId());
+        log.info("Password reset requested for email: {}", request.getEmail());
         authenticationService.initiatePasswordReset(request);
         // Always return success to prevent email enumeration
         return ResponseEntity.ok(ApiResponse.success("If the email exists, a password reset link has been sent"));

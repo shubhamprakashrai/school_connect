@@ -15,7 +15,6 @@ import java.util.Set;
        indexes = {
            @Index(name = "idx_student_roll_class", columnList = "roll_number, current_class_id, tenant_id", unique = true),
            @Index(name = "idx_student_email", columnList = "email, tenant_id"),
-           @Index(name = "idx_student_admission", columnList = "admission_number, tenant_id", unique = true),
            @Index(name = "idx_student_status", columnList = "status"),
            @Index(name = "idx_student_class", columnList = "current_class_id"),
            @Index(name = "idx_student_section", columnList = "current_section_id")
@@ -27,9 +26,6 @@ import java.util.Set;
 @EqualsAndHashCode(callSuper = true)
 @ToString(exclude = {"user", "parents", "guardians"})
 public class Student extends BaseEntity {
-
-    @Column(name = "admission_number", nullable = false, length = 50)
-    private String admissionNumber; // Unique admission number
 
     @Column(name = "roll_number", nullable = false, length = 20)
     private String rollNumber; // Roll number within class
@@ -51,8 +47,7 @@ public class Student extends BaseEntity {
     @Column(name = "gender", nullable = false, length = 10)
     private Gender gender;
 
-    @Column(name = "blood_group", length = 10)
-    private String bloodGroup;
+
 
     @Column(name = "nationality", length = 50)
     private String nationality;
@@ -107,32 +102,19 @@ public class Student extends BaseEntity {
     @Column(name = "previous_school", length = 200)
     private String previousSchool;
 
-    @Column(name = "transfer_certificate_number", length = 50)
-    private String transferCertificateNumber;
+
 
     @Enumerated(EnumType.STRING)
     @Column(name = "status", nullable = false, length = 20)
     @Builder.Default
     private StudentStatus status = StudentStatus.ACTIVE;
 
-    @Column(name = "promotion_status", length = 20)
-    private String promotionStatus; // PROMOTED, DETAINED, PENDING
-
     // Health Information
     @Column(name = "medical_conditions", columnDefinition = "TEXT")
     private String medicalConditions;
 
-    @Column(name = "allergies", columnDefinition = "TEXT")
-    private String allergies;
-
-    @Column(name = "emergency_medication", columnDefinition = "TEXT")
-    private String emergencyMedication;
-
     @Column(name = "doctor_name", length = 100)
     private String doctorName;
-
-    @Column(name = "doctor_phone", length = 20)
-    private String doctorPhone;
 
     // Parent/Guardian Information
     @Column(name = "father_name", length = 200)
@@ -181,15 +163,7 @@ public class Student extends BaseEntity {
     @Column(name = "emergency_contact_phone", nullable = false, length = 20)
     private String emergencyContactPhone;
 
-    // Transportation
-    @Column(name = "transport_mode", length = 50)
-    private String transportMode; // BUS, VAN, SELF, WALK
 
-    @Column(name = "transport_route_id")
-    private String transportRouteId;
-
-    @Column(name = "pickup_point", length = 200)
-    private String pickupPoint;
 
     // Documents
     @Column(name = "photo_url", length = 500)
@@ -204,16 +178,7 @@ public class Student extends BaseEntity {
     @Column(name = "documents", columnDefinition = "TEXT")
     private String documents; // JSON array of document URLs
 
-    // Fee Information
-    @Column(name = "fee_category", length = 50)
-    private String feeCategory;
 
-    @Column(name = "scholarship_applicable")
-    @Builder.Default
-    private Boolean scholarshipApplicable = false;
-
-    @Column(name = "scholarship_details", columnDefinition = "TEXT")
-    private String scholarshipDetails;
 
     // System User Link
     @OneToOne
@@ -262,17 +227,13 @@ public class Student extends BaseEntity {
         return name.toString();
     }
 
-    public int getAge() {
-        return LocalDate.now().getYear() - dateOfBirth.getYear();
-    }
+
 
     public boolean isActive() {
         return status == StudentStatus.ACTIVE;
     }
 
-    public boolean isMinor() {
-        return getAge() < 18;
-    }
+
 
     // Enums
     public enum Gender {

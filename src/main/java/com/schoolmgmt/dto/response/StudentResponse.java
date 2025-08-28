@@ -18,7 +18,6 @@ import java.time.LocalDate;
 @Schema(description = "Student response")
 public class StudentResponse {
     private String id;
-    private String admissionNumber;
     private String rollNumber;
     private String firstName;
     private String middleName;
@@ -26,7 +25,6 @@ public class StudentResponse {
     private String fullName;
     private LocalDate dateOfBirth;
     private String gender;
-    private String bloodGroup;
     private String email;
     private String phone;
     private String address;
@@ -42,6 +40,4 @@ public class StudentResponse {
     private ParentInfo motherInfo;
     private ParentInfo guardianInfo;
     private EmergencyContact emergencyContact;
-    private TransportInfo transportInfo;
-    private Integer age;
 }

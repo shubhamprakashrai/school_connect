@@ -22,11 +22,6 @@ import java.util.UUID;
 public interface StudentRepository extends JpaRepository<Student, UUID>, JpaSpecificationExecutor<Student> {
 
     /**
-     * Find student by admission number and tenant
-     */
-    Optional<Student> findByAdmissionNumberAndTenantId(String admissionNumber, String tenantId);
-
-    /**
      * Find student by roll number, class and tenant
      */
     Optional<Student> findByRollNumberAndCurrentClassIdAndTenantId(String rollNumber, String classId, String tenantId);
@@ -64,11 +59,6 @@ public interface StudentRepository extends JpaRepository<Student, UUID>, JpaSpec
     List<Student> findByGuardianId(@Param("guardianId") UUID guardianId);
 
     /**
-     * Check if admission number exists
-     */
-    boolean existsByAdmissionNumberAndTenantId(String admissionNumber, String tenantId);
-
-    /**
      * Check if roll number exists in class
      */
     boolean existsByRollNumberAndCurrentClassIdAndTenantId(String rollNumber, String classId, String tenantId);
@@ -79,7 +69,7 @@ public interface StudentRepository extends JpaRepository<Student, UUID>, JpaSpec
     @Query("SELECT s FROM Student s WHERE s.tenantId = :tenantId AND " +
            "(LOWER(s.firstName) LIKE LOWER(CONCAT('%', :searchTerm, '%')) OR " +
            "LOWER(s.lastName) LIKE LOWER(CONCAT('%', :searchTerm, '%')) OR " +
-           "LOWER(s.admissionNumber) LIKE LOWER(CONCAT('%', :searchTerm, '%')))")
+           "LOWER(s.rollNumber) LIKE LOWER(CONCAT('%', :searchTerm, '%')))")
     Page<Student> searchStudents(@Param("searchTerm") String searchTerm, 
                                  @Param("tenantId") String tenantId, 
                                  Pageable pageable);
@@ -107,22 +97,6 @@ public interface StudentRepository extends JpaRepository<Student, UUID>, JpaSpec
     void updateStatus(@Param("studentId") UUID studentId, @Param("status") Student.StudentStatus status);
 
     /**
-     * Update student class and section
-     */
-    @Modifying
-    @Query("UPDATE Student s SET s.currentClassId = :classId, s.currentSectionId = :sectionId, " +
-           "s.promotionStatus = :promotionStatus WHERE s.id = :studentId")
-    void promoteStudent(@Param("studentId") UUID studentId, 
-                       @Param("classId") String classId, 
-                       @Param("sectionId") String sectionId,
-                       @Param("promotionStatus") String promotionStatus);
-
-    /**
-     * Find students by transport route
-     */
-    List<Student> findByTransportRouteIdAndTenantId(String routeId, String tenantId);
-
-    /**
      * Find students with birthdays in date range
      */
     @Query("SELECT s FROM Student s WHERE s.tenantId = :tenantId AND " +
@@ -143,20 +117,4 @@ public interface StudentRepository extends JpaRepository<Student, UUID>, JpaSpec
            "GROUP BY s.currentClassId")
     List<Object[]> getStudentStatisticsByClass(@Param("tenantId") String tenantId);
 
-    /**
-     * Find students with medical conditions
-     */
-    @Query("SELECT s FROM Student s WHERE s.tenantId = :tenantId AND " +
-           "(s.medicalConditions IS NOT NULL OR s.allergies IS NOT NULL)")
-    List<Student> findStudentsWithMedicalConditions(@Param("tenantId") String tenantId);
-
-    /**
-     * Find students by fee category
-     */
-    List<Student> findByFeeCategoryAndTenantId(String feeCategory, String tenantId);
-
-    /**
-     * Find scholarship students
-     */
-    List<Student> findByScholarshipApplicableTrueAndTenantId(String tenantId);
 }

@@ -51,14 +51,8 @@ public class UpdateStudentRequest {
     @Schema(description = "Postal code")
     private String postalCode;
     
-    @Schema(description = "Blood group")
-    private String bloodGroup;
-    
     @Schema(description = "Medical information")
     private MedicalInfo medicalInfo;
-    
-    @Schema(description = "Transport information")
-    private TransportInfo transportInfo;
     
     @URL
     @Schema(description = "Photo URL")
