@@ -61,6 +61,12 @@ public class MobileConfigService {
     }
 
     @Transactional
+    public boolean deleteConfig(String scope, String key, String schoolId) {
+        log.info("Deleting config for schoolId: {}, scope: {}, key: {}", schoolId, scope, key);
+        return repository.deleteByScopeAndKeyAndSchoolId(scope, key, schoolId) > 0;
+    }
+
+    @Transactional
     public void updateConfig(ConfigUpdateRequest request) {
         try {
             log.info("Updating config for schoolId: {}, scope: {}, key: {}", 
