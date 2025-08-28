@@ -1,7 +1,12 @@
 package com.schoolmgmt.model;
 
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
+import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import jakarta.persistence.*;
 import lombok.*;
+import org.hibernate.annotations.JdbcTypeCode;
+import org.hibernate.type.SqlTypes;
 
 import java.time.Instant;
 
@@ -28,8 +33,12 @@ public class AppConfig {
     private String key; // e.g., "google_pay"
 
     @Column(columnDefinition = "jsonb", nullable = false)
-    private String value; // stored as JSON string
+    @JdbcTypeCode(SqlTypes.JSON)
+    @JsonSerialize(using = com.fasterxml.jackson.databind.ser.std.ToStringSerializer.class)
+    @JsonDeserialize(using = com.fasterxml.jackson.databind.deser.std.StringDeserializer.class)
+    private JsonNode value; // stored as JSONB
 
+    @Builder.Default
     @Column(name = "updated_at", nullable = false)
     private Instant updatedAt = Instant.now();
 }

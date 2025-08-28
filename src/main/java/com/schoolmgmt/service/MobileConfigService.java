@@ -1,17 +1,21 @@
 package com.schoolmgmt.service;
 
-import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.schoolmgmt.dto.request.ConfigUpdateRequest;
 import com.schoolmgmt.dto.response.MobileConfigResponse;
 import com.schoolmgmt.model.AppConfig;
 import com.schoolmgmt.repository.AppConfigRepository;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Instant;
 import java.util.*;
 import java.util.stream.Collectors;
 
+@Slf4j
 @Service
 public class MobileConfigService {
 
@@ -24,15 +28,31 @@ public class MobileConfigService {
     }
 
     public MobileConfigResponse getConfig(String schoolId) {
+        // Get all configs for the school or global configs
         List<AppConfig> configs = repository.findBySchoolIdOrSchoolIdIsNull(schoolId);
-
-        Map<String, Map<String, Object>> grouped = configs.stream().collect(
-                Collectors.groupingBy(
-                        AppConfig::getScope,
-                        Collectors.toMap(AppConfig::getKey, c -> parseValue(c.getValue()))
-                )
-        );
-
+        
+        // Group by scope and key, keeping the most specific config (school-specific overrides global)
+        Map<String, Map<String, Object>> grouped = new HashMap<>();
+        
+        for (AppConfig config : configs) {
+            String scope = config.getScope();
+            String key = config.getKey();
+            
+            // Only override if this is a more specific config (school-specific) or if we haven't seen this key yet
+            if (!grouped.containsKey(scope) || 
+                !grouped.get(scope).containsKey(key) || 
+                (config.getSchoolId() != null && config.getSchoolId().equals(schoolId))) {
+                
+                // Parse the JSON value
+                Object value = parseValue(config.getValue());
+                
+                // Add to the appropriate scope
+                grouped.computeIfAbsent(scope, k -> new HashMap<>())
+                      .put(key, value);
+            }
+        }
+        
+        // Build the response with all scopes, even if empty
         return MobileConfigResponse.builder()
                 .version("1.0.0")
                 .lastUpdated(Instant.now().toString())
@@ -42,30 +62,59 @@ public class MobileConfigService {
                 .build();
     }
 
+    @Transactional
     public void updateConfig(ConfigUpdateRequest request) {
-        AppConfig config = AppConfig.builder()
-                .schoolId(request.getSchoolId())
-                .scope(request.getScope())
-                .key(request.getKey())
-                .value(writeValue(request.getValue()))
-                .updatedAt(Instant.now())
-                .build();
-        repository.save(config);
-    }
-
-    private Object parseValue(String json) {
         try {
-            return objectMapper.readValue(json, new TypeReference<Map<String, Object>>() {});
+            log.info("Updating config for schoolId: {}, scope: {}, key: {}", 
+                    request.getSchoolId(), request.getScope(), request.getKey());
+            
+            // Find existing config or create new one
+            AppConfig config = repository.findOneByScopeAndKeyAndSchoolId(
+                    request.getScope(), 
+                    request.getKey(),
+                    request.getSchoolId()
+            ).orElseGet(() -> AppConfig.builder()
+                    .schoolId(request.getSchoolId())
+                    .scope(request.getScope())
+                    .key(request.getKey())
+                    .build());
+            
+            // Convert the request value to JsonNode
+            JsonNode valueNode = objectMapper.valueToTree(request.getValue());
+            config.setValue(valueNode);
+            config.setUpdatedAt(Instant.now());
+            
+            // Save the config
+            repository.save(config);
+            log.info("Config updated successfully: {}", config);
+            
         } catch (Exception e) {
-            return json;
+            log.error("Error updating config: {}", e.getMessage(), e);
+            throw new RuntimeException("Failed to update configuration: " + e.getMessage(), e);
         }
     }
 
-    private String writeValue(Object value) {
+    private Object parseValue(JsonNode jsonNode) {
+        if (jsonNode == null) {
+            return null;
+        }
         try {
-            return objectMapper.writeValueAsString(value);
+            if (jsonNode.isObject()) {
+                return objectMapper.convertValue(jsonNode, Map.class);
+            } else if (jsonNode.isArray()) {
+                return objectMapper.convertValue(jsonNode, List.class);
+            } else if (jsonNode.isTextual()) {
+                return jsonNode.asText();
+            } else if (jsonNode.isNumber()) {
+                return jsonNode.numberValue();
+            } else if (jsonNode.isBoolean()) {
+                return jsonNode.booleanValue();
+            }
+            return jsonNode.toString();
         } catch (Exception e) {
-            throw new RuntimeException("Invalid JSON value");
+            log.warn("Error parsing JSON value: {}", e.getMessage());
+            return jsonNode.toString();
         }
     }
+
 }
