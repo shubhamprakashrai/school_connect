@@ -32,8 +32,13 @@ import java.util.stream.Collectors;
 @ToString(exclude = {"password", "roles"})
 public class User extends BaseEntity implements UserDetails {
 
-    @Column(name = "username", nullable = false, length = 50)
+
+    @Column(name = "userId", nullable = false, length = 50, unique = true)
+    private String userId;
+
+    @Column(name = "username", nullable = false, length = 50, unique = true)
     private String username;
+
 
     @Column(name = "email", nullable = false, length = 100)
     private String email;

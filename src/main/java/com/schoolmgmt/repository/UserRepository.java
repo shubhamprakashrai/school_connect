@@ -23,6 +23,8 @@ public interface UserRepository extends JpaRepository<User, UUID> {
      */
     Optional<User> findByUsernameAndTenantId(String username, String tenantId);
 
+
+
     /**
      * Find user by email and tenant ID
      */
@@ -49,7 +51,17 @@ public interface UserRepository extends JpaRepository<User, UUID> {
     /**
      * Check if username exists for a tenant
      */
+    // Optional: check if username already exists for a tenant
     boolean existsByUsernameAndTenantId(String username, String tenantId);
+
+    // Get the max sequence number for a tenant prefix
+    @Query(value = "SELECT COALESCE(MAX(CAST(SUBSTRING(username, LENGTH(:tenantPrefix) + 1) AS INTEGER)), 0) " +
+            "FROM users WHERE username LIKE CONCAT(:tenantPrefix, '%')", nativeQuery = true)
+    Integer findMaxSequenceForTenant(@Param("tenantPrefix") String tenantPrefix);
+
+
+
+
 
     /**
      * Check if email exists for a tenant

@@ -30,8 +30,9 @@ public class Tenant {
     @GeneratedValue(strategy = GenerationType.UUID)
     private UUID id;
 
-    @Column(name = "identifier", unique = true, nullable = false, length = 50)
-    private String identifier; // Unique tenant identifier (e.g., "school_001")
+    @Column(name = "identifier", unique = true, nullable = false, length = 7)
+    private String identifier; // Unique tenant identifier (e.g., "SM00001")
+
 
     @Column(name = "name", nullable = false, length = 200)
     private String name; // School name
@@ -137,6 +138,7 @@ public class Tenant {
     @Version
     @Column(name = "version")
     private Long version;
+
 
     // Business Methods
     public boolean isActive() {

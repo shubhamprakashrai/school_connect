@@ -61,6 +61,7 @@ services:
   redis-commander:
     image: rediscommander/redis-commander:latest
     container_name: school-redis-commander
+    platform: linux/amd64
     environment:
       REDIS_HOSTS: local:redis:6379
     ports:
@@ -71,29 +72,29 @@ services:
       - redis
 
   # Spring Boot Application
-  app:
-    build:
-      context: .
-      dockerfile: Dockerfile
-    container_name: school-app
-    environment:
-      SPRING_PROFILES_ACTIVE: docker
-      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/school_mgmt_db
-      SPRING_DATASOURCE_USERNAME: school_admin
-      SPRING_DATASOURCE_PASSWORD: school_password
-      SPRING_DATA_REDIS_HOST: redis
-      SPRING_DATA_REDIS_PORT: 6379
-    ports:
-      - "8080:8080"
-    volumes:
-      - ./uploads:/app/uploads
-    networks:
-      - school-network
-    depends_on:
-      postgres:
-        condition: service_healthy
-      redis:
-        condition: service_healthy
+#  app:
+#    build:
+#      context: .
+#      dockerfile: Dockerfile
+#    container_name: school-app
+#    environment:
+#      SPRING_PROFILES_ACTIVE: docker
+#      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/school_mgmt_db
+#      SPRING_DATASOURCE_USERNAME: school_admin
+#      SPRING_DATASOURCE_PASSWORD: school_password
+#      SPRING_DATA_REDIS_HOST: redis
+#      SPRING_DATA_REDIS_PORT: 6379
+#    ports:
+#      - "8080:8080"
+#    volumes:
+#      - ./uploads:/app/uploads
+#    networks:
+#      - school-network
+#    depends_on:
+#      postgres:
+#        condition: service_healthy
+#      redis:
+#        condition: service_healthy
 
 networks:
   school-network:

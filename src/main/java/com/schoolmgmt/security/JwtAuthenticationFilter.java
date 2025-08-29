@@ -106,12 +106,15 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
      * Check if the endpoint is public and doesn't require authentication
      */
     private boolean isPublicEndpoint(String uri) {
-        return uri.contains("/auth/") ||
-                uri.contains("/public/") ||
-                uri.contains("/swagger-ui") ||
-                uri.contains("/v3/api-docs") ||
-                uri.contains("/actuator/health") ||
-                uri.contains("/tenants/register") ||
-                uri.equals("/error");
+        String normalized = uri.startsWith("/") ? uri : "/" + uri;
+
+        return normalized.equals("/api/tenants/register") ||
+                normalized.equals("/error") ||
+                normalized.startsWith("/api/auth/") ||
+                normalized.startsWith("/api/public/") ||
+                normalized.startsWith("/swagger-ui") ||
+                normalized.startsWith("/v3/api-docs") ||
+                normalized.startsWith("/actuator/health");
     }
+
 }

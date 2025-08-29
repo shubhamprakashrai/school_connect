@@ -16,6 +16,7 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.thymeleaf.templatemode.TemplateMode;
 import org.thymeleaf.templateresolver.ClassLoaderTemplateResolver;
 import org.thymeleaf.templateresolver.ITemplateResolver;
+import org.springframework.beans.factory.annotation.Value;
 
 import java.util.Properties;
 import java.util.concurrent.Executor;
@@ -60,22 +61,24 @@ public class AppConfig {
     }
 
     @Bean
-    public JavaMailSender javaMailSender() {
+    public JavaMailSender javaMailSender(
+            @Value("${spring.mail.username}") String username,
+            @Value("${spring.mail.password}") String password) {
+
         JavaMailSenderImpl mailSender = new JavaMailSenderImpl();
         mailSender.setHost("smtp.gmail.com");
         mailSender.setPort(587);
-        
-        // These should be externalized to properties
-        mailSender.setUsername("${spring.mail.username}");
-        mailSender.setPassword("${spring.mail.password}");
-        
+
+        mailSender.setUsername(username);
+        mailSender.setPassword(password);
+
         Properties props = mailSender.getJavaMailProperties();
         props.put("mail.transport.protocol", "smtp");
         props.put("mail.smtp.auth", "true");
         props.put("mail.smtp.starttls.enable", "true");
         props.put("mail.smtp.starttls.required", "true");
         props.put("mail.debug", "false");
-        
+
         return mailSender;
     }
 

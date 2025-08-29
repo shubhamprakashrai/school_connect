@@ -13,6 +13,7 @@ import lombok.NoArgsConstructor;
 @Schema(description = "Admin information")
 public class AdminInfo {
     private String id;
+    private String userId;
     private String username;
     private String email;
     private String firstName;

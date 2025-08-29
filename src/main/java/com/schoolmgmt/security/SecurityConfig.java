@@ -67,6 +67,8 @@ public class SecurityConfig implements WebMvcConfigurer {
             "/api/auth/**",
             "/api/public/**",
             "/api/tenants/register",
+            "/tenants/register",
+
             "/v3/api-docs/**",
             "/swagger-ui/**",
             "/swagger-ui.html",

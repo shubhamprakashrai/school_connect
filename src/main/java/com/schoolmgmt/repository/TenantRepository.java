@@ -20,6 +20,22 @@ import java.util.UUID;
 public interface TenantRepository extends JpaRepository<Tenant, UUID> {
 
     /**
+     * This is to find the max field from the database
+     * @param
+     * @return
+     */
+    @Query(value = "SELECT COALESCE(MAX(CAST(SUBSTRING(identifier, 3) AS INTEGER)), 0) + 1 " +
+            "FROM tenants " +
+            "WHERE identifier ~ '^..[0-9]+$'", nativeQuery = true)
+    int getNextTenantSequence();
+
+
+
+
+
+
+
+    /**
      * Find tenant by identifier
      * @param identifier The tenant identifier
      * @return Optional containing the tenant if found

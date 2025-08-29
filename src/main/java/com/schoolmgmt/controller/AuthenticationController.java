@@ -148,7 +148,10 @@ public class AuthenticationController {
         @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "Password changed successfully"),
         @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "400", description = "Invalid current password"),
         @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "401", description = "Unauthorized")
+
+
     })
+
     public ResponseEntity<ApiResponse> changePassword(
             @Valid @RequestBody ChangePasswordRequest request,
             Authentication authentication) {

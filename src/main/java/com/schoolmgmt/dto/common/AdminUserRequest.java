@@ -13,7 +13,12 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 @Schema(description = "Admin user details for tenant registration")
 public class AdminUserRequest {
-    
+
+    @NotBlank(message = "Userid is required")
+    @Schema(description = "Admin userid ", example = "TE000100001")
+    private String userId;
+
+
     @NotBlank(message = "Username is required")
     @Size(min = 3, max = 50)
     @Pattern(regexp = "^[a-zA-Z0-9_]+$", message = "Username can only contain letters, numbers, and underscores")
