@@ -1,0 +1,435 @@
+{
+  "info": {
+    "name": "School Management System APIs",
+    "description": "Complete API collection for testing School Management System",
+    "version": "1.0.0",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "auth": {
+    "type": "bearer",
+    "bearer": [
+      {
+        "key": "token",
+        "value": "{{access_token}}",
+        "type": "string"
+      }
+    ]
+  },
+  "variable": [
+    {
+      "key": "base_url",
+      "value": "http://localhost:8080/api",
+      "type": "string"
+    },
+    {
+      "key": "access_token",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "tenant_id",
+      "value": "GI00001",
+      "type": "string"
+    }
+  ],
+  "item": [
+    {
+      "name": "Authentication",
+      "item": [
+        {
+          "name": "SuperAdmin Login",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"username\": \"superadmin@schoolmgmt.com\",\n  \"password\": \"admin123\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/auth/login",
+              "host": ["{{base_url}}"],
+              "path": ["auth", "login"]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 200) {",
+                  "    const response = pm.response.json();",
+                  "    pm.collectionVariables.set('access_token', response.accessToken);",
+                  "    pm.test('Login successful', function () {",
+                  "        pm.expect(response.accessToken).to.be.a('string');",
+                  "    });",
+                  "}"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Tenant Admin Login",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"username\": \"rajesh.sharma@greenwood.edu.in\",\n  \"password\": \"admin123\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/auth/login",
+              "host": ["{{base_url}}"],
+              "path": ["auth", "login"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "SuperAdmin - Tenant Management",
+      "item": [
+        {
+          "name": "Create Tenant",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Greenwood International School\",\n  \"subdomain\": \"greenwood\",\n  \"email\": \"admin@greenwood.edu.in\",\n  \"phone\": \"+91-9876543210\",\n  \"address\": \"123 Education Street, Knowledge Park\",\n  \"city\": \"Mumbai\",\n  \"state\": \"Maharashtra\",\n  \"country\": \"India\",\n  \"postalCode\": \"400001\",\n  \"website\": \"https://greenwood.edu.in\",\n  \"subscriptionPlan\": \"STANDARD\",\n  \"configuration\": {\n    \"timezone\": \"Asia/Kolkata\",\n    \"language\": \"en-IN\",\n    \"currency\": \"INR\"\n  },\n  \"adminUser\": {\n    \"firstName\": \"Rajesh\",\n    \"lastName\": \"Sharma\",\n    \"email\": \"sharmaji.blp123@gmail.com\",\n    \"phone\": \"+91-9876543210\"\n  }\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/superadmin/tenants",
+              "host": ["{{base_url}}"],
+              "path": ["superadmin", "tenants"]
+            }
+          }
+        },
+        {
+          "name": "List All Tenants",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{base_url}}/superadmin/tenants",
+              "host": ["{{base_url}}"],
+              "path": ["superadmin", "tenants"]
+            }
+          }
+        },
+        {
+          "name": "Get Tenant Statistics",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{base_url}}/superadmin/tenants/statistics",
+              "host": ["{{base_url}}"],
+              "path": ["superadmin", "tenants", "statistics"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Student Management",
+      "item": [
+        {
+          "name": "Create Student",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "X-Tenant-ID",
+                "value": "{{tenant_id}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"firstName\": \"Aarav\",\n  \"lastName\": \"Patel\",\n  \"email\": \"aarav.patel@student.greenwood.edu.in\",\n  \"rollNumber\": \"2024001\",\n  \"classId\": \"10A\",\n  \"sectionId\": \"A\",\n  \"dateOfBirth\": \"2010-05-15\",\n  \"gender\": \"MALE\",\n  \"address\": {\n    \"street\": \"456 Student Lane\",\n    \"city\": \"Mumbai\",\n    \"state\": \"Maharashtra\",\n    \"postalCode\": \"400002\"\n  },\n  \"parentInfo\": {\n    \"fatherName\": \"Vikram Patel\",\n    \"motherName\": \"Priya Patel\",\n    \"fatherPhone\": \"+91-9876543211\",\n    \"motherPhone\": \"+91-9876543212\",\n    \"fatherEmail\": \"vikram.patel@email.com\",\n    \"motherEmail\": \"priya.patel@email.com\"\n  },\n  \"emergencyContact\": {\n    \"name\": \"Vikram Patel\",\n    \"relationship\": \"Father\",\n    \"phone\": \"+91-9876543211\"\n  },\n  \"medicalInfo\": {\n    \"bloodGroup\": \"B+\",\n    \"allergies\": \"None\",\n    \"medicalConditions\": \"None\"\n  }\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/students",
+              "host": ["{{base_url}}"],
+              "path": ["students"]
+            }
+          }
+        },
+        {
+          "name": "List All Students",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "X-Tenant-ID",
+                "value": "{{tenant_id}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/students",
+              "host": ["{{base_url}}"],
+              "path": ["students"]
+            }
+          }
+        },
+        {
+          "name": "Get Students by Class",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "X-Tenant-ID",
+                "value": "{{tenant_id}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/students/class/10A?sectionId=A",
+              "host": ["{{base_url}}"],
+              "path": ["students", "class", "10A"],
+              "query": [
+                {
+                  "key": "sectionId",
+                  "value": "A"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Search Students",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "X-Tenant-ID",
+                "value": "{{tenant_id}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/students/search?query=Aarav",
+              "host": ["{{base_url}}"],
+              "path": ["students", "search"],
+              "query": [
+                {
+                  "key": "query",
+                  "value": "Aarav"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Get Student Statistics",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "X-Tenant-ID",
+                "value": "{{tenant_id}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/students/statistics",
+              "host": ["{{base_url}}"],
+              "path": ["students", "statistics"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Teacher Management",
+      "item": [
+        {
+          "name": "Create Teacher",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "X-Tenant-ID",
+                "value": "{{tenant_id}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"firstName\": \"Sunita\",\n  \"lastName\": \"Verma\",\n  \"email\": \"sunita.verma@greenwood.edu.in\",\n  \"employeeId\": \"TCH001\",\n  \"department\": \"Mathematics\",\n  \"designation\": \"Senior Teacher\",\n  \"qualification\": \"M.Sc Mathematics, B.Ed\",\n  \"experience\": 8,\n  \"dateOfJoining\": \"2020-06-01\",\n  \"phoneNumber\": \"+91-9876543213\",\n  \"address\": {\n    \"street\": \"789 Teacher Colony\",\n    \"city\": \"Mumbai\",\n    \"state\": \"Maharashtra\",\n    \"postalCode\": \"400003\"\n  },\n  \"emergencyContact\": {\n    \"name\": \"Ramesh Verma\",\n    \"relationship\": \"Spouse\",\n    \"phone\": \"+91-9876543214\"\n  },\n  \"subjects\": [\"Mathematics\", \"Statistics\"]\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/teachers",
+              "host": ["{{base_url}}"],
+              "path": ["teachers"]
+            }
+          }
+        },
+        {
+          "name": "List All Teachers",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "X-Tenant-ID",
+                "value": "{{tenant_id}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/teachers",
+              "host": ["{{base_url}}"],
+              "path": ["teachers"]
+            }
+          }
+        },
+        {
+          "name": "Assign Class to Teacher",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "X-Tenant-ID",
+                "value": "{{tenant_id}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"classId\": \"10A\",\n  \"sectionId\": \"A\",\n  \"subject\": \"Mathematics\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/teachers/{{teacher_id}}/classes",
+              "host": ["{{base_url}}"],
+              "path": ["teachers", "{{teacher_id}}", "classes"]
+            }
+          }
+        },
+        {
+          "name": "Get Teacher Statistics",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "X-Tenant-ID",
+                "value": "{{tenant_id}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/teachers/statistics",
+              "host": ["{{base_url}}"],
+              "path": ["teachers", "statistics"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Attendance Management",
+      "item": [
+        {
+          "name": "Mark Attendance",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "X-Tenant-ID",
+                "value": "{{tenant_id}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"classId\": \"10A\",\n  \"sectionId\": \"A\",\n  \"subject\": \"Mathematics\",\n  \"date\": \"2024-09-01\",\n  \"period\": 1,\n  \"attendanceRecords\": [\n    {\n      \"studentId\": \"{{student_id}}\",\n      \"status\": \"PRESENT\"\n    }\n  ]\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/attendance/mark",
+              "host": ["{{base_url}}"],
+              "path": ["attendance", "mark"]
+            }
+          }
+        },
+        {
+          "name": "Get Attendance Records",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "X-Tenant-ID",
+                "value": "{{tenant_id}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/attendance?classId=10A&date=2024-09-01",
+              "host": ["{{base_url}}"],
+              "path": ["attendance"],
+              "query": [
+                {
+                  "key": "classId",
+                  "value": "10A"
+                },
+                {
+                  "key": "date",
+                  "value": "2024-09-01"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Get Attendance Statistics",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "X-Tenant-ID",
+                "value": "{{tenant_id}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/attendance/statistics",
+              "host": ["{{base_url}}"],
+              "path": ["attendance", "statistics"]
+            }
+          }
+        }
+      ]
+    }
+  ],
+  "event": [
+    {
+      "listen": "prerequest",
+      "script": {
+        "type": "text/javascript",
+        "exec": [
+          "// Auto-refresh token if expired",
+          "if (!pm.collectionVariables.get('access_token')) {",
+          "    console.log('No access token found. Please login first.');",
+          "}"
+        ]
+      }
+    }
+  ]
+}
