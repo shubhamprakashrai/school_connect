@@ -52,7 +52,7 @@ public class UserService {
         String tenantId = TenantContext.requireCurrentTenant();
         User.UserRole userRole = User.UserRole.valueOf(role.toUpperCase());
         
-        List<User> users = userRepository.findByPrimaryRoleAndTenantId(userRole, tenantId);
+        List<User> users = userRepository.findByRoleAndTenantId(userRole, tenantId);
         return users.stream()
                 .map(this::toUserResponse)
                 .collect(Collectors.toList());
@@ -94,17 +94,15 @@ public class UserService {
         
         // Create user
         User user = User.builder()
-                .username(request.getUsername())
                 .email(request.getEmail())
                 .password(passwordEncoder.encode(request.getPassword()))
                 .firstName(request.getFirstName())
                 .lastName(request.getLastName())
                 .phone(request.getPhone())
-                .primaryRole(role)
-                .roles(Set.of(role))
+                .role(role)
                 .status(request.isSendInvitation() ? User.UserStatus.PENDING : User.UserStatus.ACTIVE)
                 .emailVerified(!request.isSendInvitation())
-                .enabled(!request.isSendInvitation())
+                .isActive(!request.isSendInvitation())
                 .build();
         
         user.setTenantId(tenantId);
@@ -299,14 +297,13 @@ public class UserService {
     private UserResponse toUserResponse(User user) {
         return UserResponse.builder()
                 .id(user.getId().toString())
-                .username(user.getUsername())
                 .email(user.getEmail())
                 .firstName(user.getFirstName())
                 .lastName(user.getLastName())
                 .fullName(user.getFullName())
                 .phone(user.getPhone())
                 .avatarUrl(user.getAvatarUrl())
-                .primaryRole(user.getPrimaryRole().name())
+                .primaryRole(user.getRole().name())
                 .roles(user.getRoles().stream()
                         .map(Enum::name)
                         .collect(Collectors.toSet()))
@@ -317,5 +314,20 @@ public class UserService {
                 .createdAt(user.getCreatedAt())
                 .updatedAt(user.getUpdatedAt())
                 .build();
+    }
+
+    /**
+     * Manually verify user email (for testing/admin purposes)
+     */
+    public void manuallyVerifyEmail(UUID userId) {
+        log.info("Manually verifying email for user: {}", userId);
+        
+        User user = userRepository.findById(userId)
+            .orElseThrow(() -> new ResourceNotFoundException("User not found with id: " + userId));
+        
+        // Use the existing repository method to verify email
+        userRepository.verifyEmail(userId);
+        
+        log.info("Email verified successfully for user: {} ({})", userId, user.getEmail());
     }
 }

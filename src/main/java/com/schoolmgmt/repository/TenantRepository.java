@@ -2,6 +2,7 @@ package com.schoolmgmt.repository;
 
 import com.schoolmgmt.model.Tenant;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -17,7 +18,7 @@ import java.util.UUID;
  * Provides methods for tenant management and queries.
  */
 @Repository
-public interface TenantRepository extends JpaRepository<Tenant, UUID> {
+public interface TenantRepository extends JpaRepository<Tenant, UUID>, JpaSpecificationExecutor<Tenant> {
 
     /**
      * This is to find the max field from the database
@@ -191,4 +192,41 @@ public interface TenantRepository extends JpaRepository<Tenant, UUID> {
      */
     @Query("SELECT t.currentStudents, t.maxStudents, t.currentTeachers, t.maxTeachers, t.currentStorageMb, t.maxStorageGb FROM Tenant t WHERE t.id = :tenantId")
     Object[] getTenantStatistics(@Param("tenantId") UUID tenantId);
+
+    // Additional methods for SuperAdmin operations
+
+    /**
+     * Count tenants by status
+     * @param status The tenant status
+     * @return Count of tenants with the given status
+     */
+    long countByStatus(Tenant.TenantStatus status);
+
+    /**
+     * Count tenants by subscription plan
+     * @param plan The subscription plan
+     * @return Count of tenants with the given plan
+     */
+    long countBySubscriptionPlan(Tenant.SubscriptionPlan plan);
+
+    /**
+     * Count tenants created after a specific date
+     * @param createdAt The date threshold
+     * @return Count of tenants created after the given date
+     */
+    long countByCreatedAtAfter(LocalDateTime createdAt);
+
+    /**
+     * Search tenants by name, subdomain, or email
+     * @param query The search query
+     * @param limit The maximum number of results
+     * @return List of matching tenants
+     */
+    @Query(value = "SELECT * FROM tenants t WHERE " +
+           "LOWER(t.name) LIKE LOWER(CONCAT('%', :query, '%')) OR " +
+           "LOWER(t.subdomain) LIKE LOWER(CONCAT('%', :query, '%')) OR " +
+           "LOWER(t.email) LIKE LOWER(CONCAT('%', :query, '%')) " +
+           "ORDER BY t.created_at DESC " +
+           "LIMIT :limit", nativeQuery = true)
+    List<Tenant> searchTenants(@Param("query") String query, @Param("limit") int limit);
 }

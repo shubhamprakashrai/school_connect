@@ -101,17 +101,16 @@ public class AuthenticationService {
             userRepository.updateLastLogin(user.getId(), LocalDateTime.now());
             
             // Generate tokens
-            String accessToken = jwtService.generateToken(user, user.getTenantId(), user.getPrimaryRole().name());
+            String accessToken = jwtService.generateToken(user, user.getTenantId(), user.getRole().name());
             String refreshToken = jwtService.generateRefreshToken(user);
             
             // Build response
             UserInfo userInfo = UserInfo.builder()
                 .id(user.getId().toString())
-                .username(user.getUsername())
                 .email(user.getEmail())
                 .firstName(user.getFirstName())
                 .lastName(user.getLastName())
-                .role(user.getPrimaryRole().name())
+                .role(user.getRole().name())
                 .tenantId(user.getTenantId())
                 .emailVerified(user.isEmailVerified())
                 .mfaEnabled(user.isMfaEnabled())
@@ -157,17 +156,15 @@ public class AuthenticationService {
             
             // Create user
             User user = User.builder()
-                .username(request.getUsername())
                 .email(request.getEmail())
                 .password(passwordEncoder.encode(request.getPassword()))
                 .firstName(request.getFirstName())
                 .lastName(request.getLastName())
                 .phone(request.getPhone())
-                .primaryRole(role)
-                .roles(Set.of(role))
+                .role(role)
                 .status(User.UserStatus.PENDING)
                 .emailVerified(false)
-                .enabled(false)
+                .isActive(false)
                 .emailVerificationToken(generateToken())
                 .build();
             
@@ -208,15 +205,14 @@ public class AuthenticationService {
                 .orElseThrow(() -> new UsernameNotFoundException("User not found"));
             
             // Generate new access token
-            String newAccessToken = jwtService.generateToken(user, tenantId, user.getPrimaryRole().name());
+            String newAccessToken = jwtService.generateToken(user, tenantId, user.getRole().name());
             
             UserInfo userInfo = UserInfo.builder()
                 .id(user.getId().toString())
-                .username(user.getUsername())
                 .email(user.getEmail())
                 .firstName(user.getFirstName())
                 .lastName(user.getLastName())
-                .role(user.getPrimaryRole().name())
+                .role(user.getRole().name())
                 .tenantId(tenantId)
                 .emailVerified(user.isEmailVerified())
                 .mfaEnabled(user.isMfaEnabled())

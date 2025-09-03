@@ -31,42 +31,28 @@ public interface TeacherClassRepository extends JpaRepository<TeacherClass, UUID
     /**
      * Find teachers assigned to a class
      */
-    List<TeacherClass> findByClassIdAndIsActiveTrueAndTenantId(String classId, String tenantId);
+    List<TeacherClass> findBySectionIdAndIsActiveTrueAndTenantId(UUID sectionId, String tenantId);
 
-    /**
-     * Find teachers assigned to a specific class and section
-     */
-    List<TeacherClass> findByClassIdAndSectionIdAndIsActiveTrueAndTenantId(String classId, String sectionId, String tenantId);
-
-    /**
-     * Find class teacher for a class
-     */
-    Optional<TeacherClass> findByClassIdAndSectionIdAndIsClassTeacherTrueAndIsActiveTrueAndTenantId(String classId, String sectionId, String tenantId);
-
-    /**
-     * Find class teacher for a class (without section)
-     */
-    Optional<TeacherClass> findByClassIdAndIsClassTeacherTrueAndIsActiveTrueAndTenantId(String classId, String tenantId);
 
     /**
      * Check if teacher is assigned to class
      */
-    boolean existsByTeacherIdAndClassIdAndSectionIdAndIsActiveTrueAndTenantId(UUID teacherId, String classId, String sectionId, String tenantId);
+    boolean existsByTeacherIdAndSectionIdAndIsActiveTrueAndTenantId(UUID teacherId, UUID sectionId, String tenantId);
 
     /**
      * Check if teacher is assigned to class (without section check)
      */
-    boolean existsByTeacherIdAndClassIdAndIsActiveTrueAndTenantId(UUID teacherId, String classId, String tenantId);
+    boolean existsByTeacherIdAndIsActiveTrueAndTenantId(UUID teacherId, String tenantId);
 
     /**
      * Find assignments by subject
      */
-    List<TeacherClass> findBySubjectAndIsActiveTrueAndTenantId(String subject, String tenantId);
+    List<TeacherClass> findBySubjectIdAndIsActiveTrueAndTenantId(UUID subjectId, String tenantId);
 
     /**
      * Find teacher assignment for specific class, section, and subject
      */
-    Optional<TeacherClass> findByTeacherIdAndClassIdAndSectionIdAndSubjectAndTenantId(UUID teacherId, String classId, String sectionId, String subject, String tenantId);
+    Optional<TeacherClass> findByTeacherIdAndSectionIdAndSubjectIdAndTenantId(UUID teacherId, UUID sectionId, UUID subjectId, String tenantId);
 
     /**
      * Deactivate all assignments for a teacher
@@ -85,7 +71,7 @@ public interface TeacherClassRepository extends JpaRepository<TeacherClass, UUID
     /**
      * Find active assignments by academic year
      */
-    List<TeacherClass> findByAcademicYearAndIsActiveTrueAndTenantId(String academicYear, String tenantId);
+    List<TeacherClass> findByAcademicYearIdAndIsActiveTrueAndTenantId(UUID academicYearId, String tenantId);
 
     /**
      * Count active classes for teacher
@@ -95,17 +81,17 @@ public interface TeacherClassRepository extends JpaRepository<TeacherClass, UUID
     /**
      * Get all unique classes assigned to teacher
      */
-    @Query("SELECT DISTINCT tc.classId FROM TeacherClass tc WHERE tc.teacherId = :teacherId AND tc.isActive = true AND tc.tenantId = :tenantId")
-    List<String> getAssignedClassesForTeacher(@Param("teacherId") UUID teacherId, @Param("tenantId") String tenantId);
+    @Query("SELECT DISTINCT tc.sectionId FROM TeacherClass tc WHERE tc.teacherId = :teacherId AND tc.isActive = true AND tc.tenantId = :tenantId")
+    List<UUID> getAssignedSectionsForTeacher(@Param("teacherId") UUID teacherId, @Param("tenantId") String tenantId);
 
     /**
      * Check if there's already a class teacher for this class
      */
-    boolean existsByClassIdAndSectionIdAndIsClassTeacherTrueAndIsActiveTrueAndTenantId(String classId, String sectionId, String tenantId);
+    // Class teacher functionality not implemented in this entity
 
     /**
      * Find assignments that need to be renewed (for academic year transition)
      */
-    @Query("SELECT tc FROM TeacherClass tc WHERE tc.academicYear = :oldAcademicYear AND tc.isActive = true AND tc.tenantId = :tenantId")
-    List<TeacherClass> findAssignmentsForAcademicYearTransition(@Param("oldAcademicYear") String oldAcademicYear, @Param("tenantId") String tenantId);
+    @Query("SELECT tc FROM TeacherClass tc WHERE tc.academicYearId = :oldAcademicYearId AND tc.isActive = true AND tc.tenantId = :tenantId")
+    List<TeacherClass> findAssignmentsForAcademicYearTransition(@Param("oldAcademicYearId") UUID oldAcademicYearId, @Param("tenantId") String tenantId);
 }

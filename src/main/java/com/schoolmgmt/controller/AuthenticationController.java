@@ -25,7 +25,7 @@ import org.springframework.web.bind.annotation.*;
  * Handles login, registration, password reset, and token management.
  */
 @RestController
-@RequestMapping("/api/auth")
+@RequestMapping("/auth")
 @RequiredArgsConstructor
 @Slf4j
 @Tag(name = "Authentication", description = "Authentication management APIs")

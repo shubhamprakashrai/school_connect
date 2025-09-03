@@ -26,7 +26,7 @@ import java.util.UUID;
  * REST controller for user management operations.
  */
 @RestController
-@RequestMapping("/api/users")
+@RequestMapping("/users")
 @RequiredArgsConstructor
 @Slf4j
 @SecurityRequirement(name = "bearerAuth")
@@ -143,6 +143,15 @@ public class UserController {
         log.info("Unlocking account for user: {}", userId);
         userService.unlockUserAccount(userId);
         return ResponseEntity.ok(ApiResponse.success("Account unlocked successfully"));
+    }
+
+    @PostMapping("/{userId}/verify-email")
+    @Operation(summary = "Manually verify user email", description = "Admin can manually verify user email for testing")
+    @PreAuthorize("hasAnyRole('ADMIN', 'SUPER_ADMIN')")
+    public ResponseEntity<ApiResponse> verifyUserEmail(@PathVariable UUID userId) {
+        log.info("Manually verifying email for user: {}", userId);
+        userService.manuallyVerifyEmail(userId);
+        return ResponseEntity.ok(ApiResponse.success("User email verified successfully"));
     }
 
     @GetMapping("/statistics")

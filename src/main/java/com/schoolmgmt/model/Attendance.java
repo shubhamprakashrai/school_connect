@@ -13,29 +13,28 @@ import java.util.UUID;
 @Entity
 @Table(name = "attendance",
        indexes = {
-           @Index(name = "idx_attendance_student_date", columnList = "student_id, attendance_date, tenant_id"),
-           @Index(name = "idx_attendance_class_date", columnList = "class_id, attendance_date, tenant_id"),
-           @Index(name = "idx_attendance_date", columnList = "attendance_date"),
-           @Index(name = "idx_attendance_teacher", columnList = "marked_by_teacher_id")
+           // Index for finding all attendance records for a student on a given date.
+           @Index(name = "idx_att_student_date", columnList = "student_id, attendance_date, tenant_id"),
+           // Index for finding all attendance records for a specific class session on a given date.
+           @Index(name = "idx_att_assignment_date", columnList = "teacher_class_id, attendance_date, tenant_id")
        },
        uniqueConstraints = {
-           @UniqueConstraint(columnNames = {"student_id", "attendance_date", "tenant_id"})
+           // A student can have only one attendance status for a specific class session on a given day.
+           @UniqueConstraint(columnNames = {"student_id", "teacher_class_id", "attendance_date", "tenant_id"}, name = "uk_student_class_attendance")
        })
-@Data
+@Getter
+@Setter
 @Builder
 @NoArgsConstructor
+
 @AllArgsConstructor
-@EqualsAndHashCode(callSuper = true)
 public class Attendance extends BaseEntity {
 
     @Column(name = "student_id", nullable = false)
     private UUID studentId;
 
-    @Column(name = "class_id", nullable = false)
-    private String classId;
-
-    @Column(name = "section_id")
-    private String sectionId;
+    @Column(name = "teacher_class_id", nullable = false)
+    private UUID teacherClassId;
 
     @Column(name = "attendance_date", nullable = false)
     private LocalDate attendanceDate;
@@ -44,22 +43,11 @@ public class Attendance extends BaseEntity {
     @Column(name = "status", nullable = false, length = 20)
     private AttendanceStatus status;
 
-    @Column(name = "marked_by_teacher_id", nullable = false)
-    private UUID markedByTeacherId;
-
     @Column(name = "marked_at", nullable = false)
     private LocalTime markedAt;
 
     @Column(name = "remarks", length = 500)
     private String remarks;
-
-    @Column(name = "subject", length = 100)
-    private String subject; // For subject-wise attendance
-
-    @Enumerated(EnumType.STRING)
-    @Column(name = "session", length = 20)
-    @Builder.Default
-    private AttendanceSession session = AttendanceSession.FULL_DAY;
 
     // Relationships
     @ManyToOne(fetch = FetchType.LAZY)
@@ -67,8 +55,8 @@ public class Attendance extends BaseEntity {
     private Student student;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "marked_by_teacher_id", insertable = false, updatable = false)
-    private Teacher teacher;
+    @JoinColumn(name = "teacher_class_id", insertable = false, updatable = false)
+    private TeacherClass teacherClass;
 
     // Business Methods
     public boolean isPresent() {
@@ -94,22 +82,6 @@ public class Attendance extends BaseEntity {
         private final String displayName;
 
         AttendanceStatus(String displayName) {
-            this.displayName = displayName;
-        }
-
-        public String getDisplayName() {
-            return displayName;
-        }
-    }
-
-    public enum AttendanceSession {
-        MORNING("Morning Session"),
-        AFTERNOON("Afternoon Session"),
-        FULL_DAY("Full Day");
-
-        private final String displayName;
-
-        AttendanceSession(String displayName) {
             this.displayName = displayName;
         }
 

@@ -6,39 +6,24 @@ import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
 
-import java.time.LocalDateTime;
 import java.util.Collection;
-import java.util.HashSet;
-import java.util.Set;
-import java.util.stream.Collectors;
+import java.util.List;
+import java.util.UUID;
 
 /**
- * User entity representing system users across all tenants.
- * Implements UserDetails for Spring Security integration.
+ * Central entity for all application users, handling authentication and authorization.
+ * Each user has a role and is linked to a specific profile (Teacher, Student, etc.).
  */
-@Entity
-@Table(name = "users",
-       indexes = {
-           @Index(name = "idx_user_email_tenant", columnList = "email, tenant_id", unique = true),
-           @Index(name = "idx_user_username_tenant", columnList = "username, tenant_id", unique = true),
-           @Index(name = "idx_user_status", columnList = "status"),
-           @Index(name = "idx_user_role", columnList = "primary_role")
-       })
-@Data
+@Getter
+@Setter
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-@EqualsAndHashCode(callSuper = true)
-@ToString(exclude = {"password", "roles"})
-public class User extends BaseEntity implements UserDetails {
-
-
-    @Column(name = "userId", nullable = false, length = 50, unique = true)
-    private String userId;
-
-    @Column(name = "username", nullable = false, length = 50, unique = true)
-    private String username;
-
+@Entity
+@Table(name = "users", uniqueConstraints = {
+    @UniqueConstraint(columnNames = {"tenant_id", "email"}, name = "uk_user_tenant_email")
+})
+public class User extends BaseEntity implements UserDetails, TenantAware {
 
     @Column(name = "email", nullable = false, length = 100)
     private String email;
@@ -46,11 +31,19 @@ public class User extends BaseEntity implements UserDetails {
     @Column(name = "password", nullable = false)
     private String password;
 
-    @Column(name = "first_name", nullable = false, length = 100)
+    @Column(name = "first_name", nullable = false)
     private String firstName;
 
-    @Column(name = "last_name", nullable = false, length = 100)
+    @Column(name = "last_name", nullable = false)
     private String lastName;
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "role", nullable = false, length = 20)
+    private UserRole role;
+
+    @Column(name = "is_active", nullable = false)
+    @Builder.Default
+    private Boolean isActive = true;
 
     @Column(name = "phone", length = 20)
     private String phone;
@@ -58,158 +51,160 @@ public class User extends BaseEntity implements UserDetails {
     @Column(name = "avatar_url", length = 500)
     private String avatarUrl;
 
-    @Enumerated(EnumType.STRING)
-    @Column(name = "status", nullable = false, length = 20)
-    @Builder.Default
-    private UserStatus status = UserStatus.PENDING;
+    @Column(name = "username", length = 100)
+    private String username;
 
     @Enumerated(EnumType.STRING)
-    @Column(name = "primary_role", nullable = false, length = 20)
-    private UserRole primaryRole;
-
-    @ElementCollection(fetch = FetchType.EAGER)
-    @CollectionTable(
-        name = "user_roles",
-        joinColumns = @JoinColumn(name = "user_id")
-    )
-    @Column(name = "role")
-    @Enumerated(EnumType.STRING)
+    @Column(name = "status", length = 20)
     @Builder.Default
-    private Set<UserRole> roles = new HashSet<>();
+    private UserStatus status = UserStatus.ACTIVE;
 
-    // Security fields
-    @Column(name = "is_account_non_expired")
+    @Column(name = "email_verified")
     @Builder.Default
-    private boolean accountNonExpired = true;
+    private Boolean emailVerified = false;
 
-    @Column(name = "is_account_non_locked")
+    @Column(name = "mfa_enabled")
     @Builder.Default
-    private boolean accountNonLocked = true;
-
-    @Column(name = "is_credentials_non_expired")
-    @Builder.Default
-    private boolean credentialsNonExpired = true;
-
-    @Column(name = "is_enabled")
-    @Builder.Default
-    private boolean enabled = false;
-
-    // MFA fields
-    @Column(name = "is_mfa_enabled")
-    @Builder.Default
-    private boolean mfaEnabled = false;
+    private Boolean mfaEnabled = false;
 
     @Column(name = "mfa_secret")
     private String mfaSecret;
-
-    // Additional security fields
-    @Column(name = "last_login_at")
-    private LocalDateTime lastLoginAt;
-
-    @Column(name = "last_password_change_at")
-    private LocalDateTime lastPasswordChangeAt;
 
     @Column(name = "password_reset_token")
     private String passwordResetToken;
 
     @Column(name = "password_reset_token_expiry")
-    private LocalDateTime passwordResetTokenExpiry;
+    private java.time.LocalDateTime passwordResetTokenExpiry;
 
     @Column(name = "email_verification_token")
     private String emailVerificationToken;
 
-    @Column(name = "email_verified")
-    @Builder.Default
-    private boolean emailVerified = false;
-
     @Column(name = "failed_login_attempts")
     @Builder.Default
-    private int failedLoginAttempts = 0;
+    private Integer failedLoginAttempts = 0;
+
+    @Column(name = "account_non_locked")
+    @Builder.Default
+    private Boolean accountNonLocked = true;
 
     @Column(name = "locked_until")
-    private LocalDateTime lockedUntil;
+    private java.time.LocalDateTime lockedUntil;
 
-    // Reference to specific entity based on role
-    @Column(name = "reference_id")
-    private String referenceId; // Can be studentId, teacherId, or parentId based on role
+    @Column(name = "last_login_at")
+    private java.time.LocalDateTime lastLoginAt;
 
-    @Column(name = "reference_type")
-    private String referenceType; // STUDENT, TEACHER, PARENT, ADMIN
+    @Column(name = "last_password_change_at")
+    private java.time.LocalDateTime lastPasswordChangeAt;
 
-    // UserDetails implementation
+    @Column(name = "user_id", length = 50)
+    private String userId;
+
+    @Column(name = "reference_id", length = 100)
+    private String referenceId;
+
+    @Column(name = "reference_type", length = 50)
+    private String referenceType;
+
+    // Link to the specific profile entity
+    @OneToOne(mappedBy = "user", fetch = FetchType.LAZY)
+    private Teacher teacherProfile;
+
+    @OneToOne(mappedBy = "user", fetch = FetchType.LAZY)
+    private Student studentProfile;
+
+    // We can add ParentProfile later
+
+    public enum UserRole {
+        SUPER_ADMIN,
+        ADMIN,
+        TEACHER,
+        STUDENT,
+        PARENT
+    }
+
+    public enum UserStatus {
+        PENDING,
+        ACTIVE,
+        INACTIVE,
+        SUSPENDED,
+        BANNED,
+        DELETED
+    }
+
+    // --- UserDetails Implementation ---
+
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {
-        return roles.stream()
-                .map(role -> new SimpleGrantedAuthority("ROLE_" + role.name()))
-                .collect(Collectors.toSet());
+        // The role is prefixed with "ROLE_" as is the convention in Spring Security.
+        return List.of(new SimpleGrantedAuthority("ROLE_" + role.name()));
+    }
+
+    @Override
+    public String getUsername() {
+        // Our email field serves as the username.
+        return email;
     }
 
     @Override
     public boolean isAccountNonExpired() {
-        return accountNonExpired;
+        return true; // Or add a field for this logic
     }
 
     @Override
     public boolean isAccountNonLocked() {
-        if (lockedUntil != null) {
-            return LocalDateTime.now().isAfter(lockedUntil);
-        }
-        return accountNonLocked;
+        return true; // Or add a field for this logic
     }
 
     @Override
     public boolean isCredentialsNonExpired() {
-        return credentialsNonExpired;
+        return true; // Or add a field for this logic
     }
 
     @Override
     public boolean isEnabled() {
-        return enabled && status == UserStatus.ACTIVE;
+        return this.isActive;
     }
 
-    // Business methods
+    // Business Methods
     public String getFullName() {
         return firstName + " " + lastName;
     }
 
-    public void incrementFailedAttempts() {
-        this.failedLoginAttempts++;
+    public UserRole getPrimaryRole() {
+        return role;
     }
 
-    public void resetFailedAttempts() {
-        this.failedLoginAttempts = 0;
-        this.lockedUntil = null;
+    public List<UserRole> getRoles() {
+        return List.of(role);
     }
 
-    public void lockAccount(int minutes) {
-        this.accountNonLocked = false;
-        this.lockedUntil = LocalDateTime.now().plusMinutes(minutes);
+    public boolean isEmailVerified() {
+        return Boolean.TRUE.equals(emailVerified);
+    }
+
+    public boolean isMfaEnabled() {
+        return Boolean.TRUE.equals(mfaEnabled);
     }
 
     public boolean isPasswordResetTokenValid() {
         return passwordResetToken != null && 
                passwordResetTokenExpiry != null && 
-               LocalDateTime.now().isBefore(passwordResetTokenExpiry);
+               passwordResetTokenExpiry.isAfter(java.time.LocalDateTime.now());
     }
 
-    // Enums
-    public enum UserStatus {
-        PENDING,    // Awaiting email verification
-        ACTIVE,     // Active user
-        INACTIVE,   // Deactivated by admin
-        SUSPENDED,  // Temporarily suspended
-        DELETED     // Soft deleted
+    public Integer getFailedLoginAttempts() {
+        return failedLoginAttempts != null ? failedLoginAttempts : 0;
     }
 
-    public enum UserRole {
-        SUPER_ADMIN,    // System super admin (cross-tenant)
-        ADMIN,          // School admin
-        TEACHER,        // Teacher
-        STUDENT,        // Student
-        PARENT,         // Parent/Guardian
-        STAFF,          // Other staff members
-        ACCOUNTANT,     // Finance/Accounts
-        LIBRARIAN,      // Library management
-        RECEPTIONIST    // Front desk
+    public void setEmailVerificationToken(String token) {
+        this.emailVerificationToken = token;
+    }
+
+    public String getEmailVerificationToken() {
+        return emailVerificationToken;
+    }
+
+    public void setEnabled(boolean enabled) {
+        this.isActive = enabled;
     }
 }

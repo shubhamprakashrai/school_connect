@@ -7,6 +7,7 @@ import jakarta.validation.constraints.Size;
 import lombok.Data;
 
 import java.time.LocalDate;
+import com.schoolmgmt.model.Teacher;
 
 @Data
 public class TeacherCreationRequest {
@@ -26,4 +27,19 @@ public class TeacherCreationRequest {
 
     @NotNull(message = "Joining date is required")
     private LocalDate joiningDate;
+
+    @NotNull(message = "Date of birth is required")
+    private LocalDate dateOfBirth;
+
+    @NotNull(message = "Gender is required")
+    private Teacher.Gender gender;
+
+    @NotBlank(message = "Phone number is required")
+    private String phone;
+
+    @NotBlank(message = "Address is required")
+    private String address;
+
+    @NotBlank(message = "Designation is required")
+    private String designation;
 }

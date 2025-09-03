@@ -153,6 +153,7 @@ public class TenantInterceptor implements HandlerInterceptor {
                 uri.contains("/auth/login") ||
                 uri.contains("/auth/register") ||
                 uri.contains("/tenants/register") ||
+                uri.contains("/test/") ||
                 uri.equals("/error");
     }
 }

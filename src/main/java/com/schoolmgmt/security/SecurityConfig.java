@@ -64,10 +64,12 @@ public class SecurityConfig implements WebMvcConfigurer {
     private long maxAge;
 
     private static final String[] PUBLIC_URLS = {
+            "/auth/**",
             "/api/auth/**",
+            "/public/**",
             "/api/public/**",
-            "/api/tenants/register",
             "/tenants/register",
+            "/api/tenants/register",
 
             "/v3/api-docs/**",
             "/swagger-ui/**",

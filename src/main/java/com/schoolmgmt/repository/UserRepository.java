@@ -76,7 +76,7 @@ public interface UserRepository extends JpaRepository<User, UUID> {
     /**
      * Find users by role and tenant ID
      */
-    List<User> findByPrimaryRoleAndTenantId(User.UserRole role, String tenantId);
+    List<User> findByRoleAndTenantId(User.UserRole role, String tenantId);
 
     /**
      * Find users by status and tenant ID
@@ -165,7 +165,7 @@ public interface UserRepository extends JpaRepository<User, UUID> {
     /**
      * Count users by role and tenant
      */
-    @Query("SELECT COUNT(u) FROM User u WHERE u.primaryRole = :role AND u.tenantId = :tenantId AND u.status = 'ACTIVE'")
+    @Query("SELECT COUNT(u) FROM User u WHERE u.role = :role AND u.tenantId = :tenantId AND u.status = 'ACTIVE'")
     long countActiveUsersByRoleAndTenant(@Param("role") User.UserRole role, @Param("tenantId") String tenantId);
 
     /**

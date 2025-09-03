@@ -13,34 +13,28 @@ import java.util.UUID;
 @Table(name = "teacher_classes",
        indexes = {
            @Index(name = "idx_teacher_class_teacher", columnList = "teacher_id, tenant_id"),
-           @Index(name = "idx_teacher_class_class", columnList = "class_id, section_id, tenant_id"),
+           @Index(name = "idx_teacher_class_assignment", columnList = "section_id, subject_id, tenant_id"),
            @Index(name = "idx_teacher_class_active", columnList = "is_active, tenant_id")
        },
        uniqueConstraints = {
-           @UniqueConstraint(columnNames = {"teacher_id", "class_id", "section_id", "subject", "tenant_id"})
+           // A teacher can only be assigned to a specific class/section/subject once per academic year.
+           @UniqueConstraint(columnNames = {"teacher_id", "section_id", "subject_id", "academic_year_id", "tenant_id"}, name = "uk_teacher_assignment")
        })
-@Data
+@Getter
+@Setter
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-@EqualsAndHashCode(callSuper = true)
 public class TeacherClass extends BaseEntity {
 
     @Column(name = "teacher_id", nullable = false)
     private UUID teacherId;
 
-    @Column(name = "class_id", nullable = false)
-    private String classId;
-
     @Column(name = "section_id")
-    private String sectionId;
+    private UUID sectionId; // Nullable if a teacher is assigned to a class in general, not a specific section.
 
-    @Column(name = "subject", length = 100)
-    private String subject; // Optional: for subject-specific assignments
-
-    @Column(name = "is_class_teacher")
-    @Builder.Default
-    private Boolean isClassTeacher = false; // Is this teacher the main class teacher?
+    @Column(name = "subject_id")
+    private UUID subjectId; // Nullable if it's a class teacher assignment without a specific subject.
 
     @Column(name = "is_active")
     @Builder.Default
@@ -52,8 +46,8 @@ public class TeacherClass extends BaseEntity {
     @Column(name = "unassigned_date")
     private LocalDate unassignedDate;
 
-    @Column(name = "academic_year", length = 20)
-    private String academicYear;
+    @Column(name = "academic_year_id", nullable = false)
+    private UUID academicYearId;
 
     @Column(name = "assigned_by")
     private UUID assignedBy; // Who assigned this teacher
@@ -66,16 +60,29 @@ public class TeacherClass extends BaseEntity {
     @JoinColumn(name = "teacher_id", insertable = false, updatable = false)
     private Teacher teacher;
 
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "section_id", insertable = false, updatable = false)
+    private Section section;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "subject_id", insertable = false, updatable = false)
+    private Subject subject;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "academic_year_id", insertable = false, updatable = false)
+    private AcademicYear academicYear;
+
     // Business Methods
     public String getClassSection() {
-        if (sectionId != null && !sectionId.isEmpty()) {
-            return classId + "-" + sectionId;
+        if (section == null || section.getSchoolClass() == null) {
+            return "N/A";
         }
-        return classId;
+        // Access SchoolClass through the Section
+        return section.getSchoolClass().getName() + " - " + section.getName();
     }
 
     public boolean isCurrentlyActive() {
-        return isActive && (unassignedDate == null || unassignedDate.isAfter(LocalDate.now()));
+        return Boolean.TRUE.equals(isActive) && (unassignedDate == null || !unassignedDate.isBefore(LocalDate.now()));
     }
 
     public void deactivate() {

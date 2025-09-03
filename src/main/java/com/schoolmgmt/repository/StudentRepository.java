@@ -39,7 +39,7 @@ public interface StudentRepository extends JpaRepository<Student, UUID>, JpaSpec
     /**
      * Find students by class and section
      */
-    List<Student> findByCurrentClassIdAndCurrentSectionIdAndTenantId(String classId, String sectionId, String tenantId);
+    List<Student> findByCurrentClassIdAndCurrentSectionIdAndTenantId(String classId, UUID sectionId, String tenantId);
 
     /**
      * Find students by status and tenant

@@ -91,7 +91,7 @@ public class Student extends BaseEntity {
     private String currentClassId;
 
     @Column(name = "current_section_id")
-    private String currentSectionId;
+    private java.util.UUID currentSectionId;
 
     @Column(name = "admission_date", nullable = false)
     private LocalDate admissionDate;
@@ -231,6 +231,10 @@ public class Student extends BaseEntity {
 
     public boolean isActive() {
         return status == StudentStatus.ACTIVE;
+    }
+
+    public java.util.UUID getSectionId() {
+        return currentSectionId;
     }
 
 

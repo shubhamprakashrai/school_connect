@@ -32,7 +32,8 @@ import org.springframework.scheduling.annotation.EnableScheduling;
         )
     )
 )
-public class SchoolManagementSystemApplication {
+public class
+SchoolManagementSystemApplication {
 
     public static void main(String[] args) {
         SpringApplication.run(SchoolManagementSystemApplication.class, args);

@@ -109,12 +109,6 @@ public class Teacher extends BaseEntity {
     @Builder.Default
     private Set<String> subjects = new HashSet<>(); // Subjects the teacher can teach
 
-    @ElementCollection
-    @CollectionTable(name = "teacher_classes", joinColumns = @JoinColumn(name = "teacher_id"))
-    @Column(name = "class_id")
-    @Builder.Default
-    private Set<String> classes = new HashSet<>(); // Classes assigned to teacher
-
     @Column(name = "is_class_teacher")
     @Builder.Default
     private Boolean isClassTeacher = false;
@@ -265,10 +259,6 @@ public class Teacher extends BaseEntity {
 
     public boolean canTeachSubject(String subject) {
         return subjects.contains(subject);
-    }
-
-    public boolean isAssignedToClass(String classId) {
-        return classes.contains(classId);
     }
 
     // Enums

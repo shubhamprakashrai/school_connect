@@ -26,7 +26,7 @@ import java.util.UUID;
  * REST controller for student management operations.
  */
 @RestController
-@RequestMapping("/api/students")
+@RequestMapping("/students")
 @RequiredArgsConstructor
 @Slf4j
 @SecurityRequirement(name = "bearerAuth")

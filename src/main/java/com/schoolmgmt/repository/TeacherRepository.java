@@ -79,9 +79,9 @@ public interface TeacherRepository extends JpaRepository<Teacher, UUID>, JpaSpec
     List<Teacher> findBySubject(@Param("subject") String subject, @Param("tenantId") String tenantId);
 
     /**
-     * Find teachers by class
+     * Find teachers by class teacher assignment
      */
-    @Query("SELECT t FROM Teacher t JOIN t.classes c WHERE c = :classId AND t.tenantId = :tenantId")
+    @Query("SELECT t FROM Teacher t WHERE t.classTeacherFor = :classId AND t.tenantId = :tenantId")
     List<Teacher> findByClass(@Param("classId") String classId, @Param("tenantId") String tenantId);
 
     /**

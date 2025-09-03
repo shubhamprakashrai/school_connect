@@ -330,11 +330,10 @@ public class TenantService implements TenantServiceInterface {
                 .firstName(request.getFirstName())
                 .lastName(request.getLastName())
                 .phone(request.getPhone())
-                .primaryRole(User.UserRole.ADMIN)
-                .roles(Set.of(User.UserRole.ADMIN))
+                .role(User.UserRole.ADMIN)
                 .status(User.UserStatus.ACTIVE)
                 .emailVerified(true)
-                .enabled(true)
+                .isActive(true)
                 .build();
 
         adminUser.setTenantId(tenantIdentifier);
