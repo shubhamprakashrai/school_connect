@@ -114,6 +114,14 @@ public interface TenantRepository extends JpaRepository<Tenant, UUID>, JpaSpecif
     boolean existsByEmail(String email);
 
     /**
+     * Check if phone exists
+     * @param phone The phone
+     * @return true if exists, false otherwise
+     */
+    boolean existsByPhone(String phone);
+
+
+    /**
      * Update tenant status
      * @param tenantId The tenant ID
      * @param status The new status

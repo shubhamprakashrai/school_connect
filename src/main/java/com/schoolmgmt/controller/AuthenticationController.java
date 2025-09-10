@@ -114,6 +114,23 @@ public class AuthenticationController {
         return ResponseEntity.ok(ApiResponse.success("Password reset successfully"));
     }
 
+    // when user login at first time navigate to the password reset
+
+    @PostMapping("/Initialreset-password")
+    @Operation(summary = "Inital Reset password", description = "Intial Reset password using original password")
+    @ApiResponses(value = {
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "Password reset successful"),
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "400", description = "Invalid or expired token")
+    })
+    public ResponseEntity<ApiResponse> resetPassword(@Valid @RequestBody FirstTimePasswordChange request) {
+        log.info("Password reset confirmation attempt");
+        authenticationService.firstTimePasswordChange(request);
+        return ResponseEntity.ok(ApiResponse.success("Password reset successfully"));
+    }
+
+
+
+
     @PostMapping("/verify-email")
     @Operation(summary = "Verify email address", description = "Verify email using token from email")
     @ApiResponses(value = {

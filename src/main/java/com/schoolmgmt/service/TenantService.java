@@ -25,6 +25,7 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDateTime;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -36,6 +37,7 @@ import java.util.stream.Collectors;
 @Slf4j
 @Transactional
 public class TenantService implements TenantServiceInterface {
+
 
     private final TenantRepository tenantRepository;
     private final UserRepository userRepository;
@@ -76,6 +78,8 @@ public class TenantService implements TenantServiceInterface {
         String tenantIdentifier = TenantIdFormatter.format(initials, nextSequence);
 
         String schemaName = "school_" + request.getSubdomain().toLowerCase().replace("-", "_");
+
+     // String tempPassowordForFirstTime= request.getAdminUser().getPassword();
 
         Tenant tenant = Tenant.builder()
                 .identifier(tenantIdentifier)
@@ -125,6 +129,7 @@ public class TenantService implements TenantServiceInterface {
                 "6. Configure attendance and grading settings"
         };
 
+
         TenantInfo tenantInfo = TenantInfo.builder()
                 .id(savedTenant.getId().toString())
                 .identifier(savedTenant.getIdentifier())
@@ -142,6 +147,7 @@ public class TenantService implements TenantServiceInterface {
                 .email(adminUser.getEmail())
                 .firstName(adminUser.getFirstName())
                 .lastName(adminUser.getLastName())
+                .isTemporaryPassword(false)
                 .build();
 
         return TenantRegistrationResponse.builder()
@@ -317,14 +323,23 @@ public class TenantService implements TenantServiceInterface {
             lastSequence = 0; // first user
         }
 
-    // Generate user code using util with configurable integer length
+        if (userRepository.existsByPhone(request.getPhone())) {
+            throw new BusinessException("Phone number  already exists: " + request.getPhone());
+        }
+
+        if (userRepository.existsByEmail(request.getEmail())) {
+            throw new BusinessException("Email already registered: " + request.getEmail());
+        }
+
+
+        // Generate user code using util with configurable integer length
 
          adminUserid = UserIdGeneratorBasedonTenantIdentifies.generateNextCode(tenantPrefix, lastSequence, 5);
 
 
         User adminUser = User.builder()
                 .userId(adminUserid)
-                .username(request.getUsername())
+                .username(adminUserid+request.getUsername())
                 .email(request.getEmail())
                 .password(passwordEncoder.encode(request.getPassword()))
                 .firstName(request.getFirstName())
@@ -334,6 +349,7 @@ public class TenantService implements TenantServiceInterface {
                 .status(User.UserStatus.ACTIVE)
                 .emailVerified(true)
                 .isActive(true)
+                .tempPasswordForFirstTime(request.getPassword())
                 .build();
 
         adminUser.setTenantId(tenantIdentifier);
@@ -354,14 +370,37 @@ public class TenantService implements TenantServiceInterface {
     private void sendWelcomeEmail(Tenant tenant, User adminUser) {
         String subject = "Welcome to " + appName + " - Your School is Ready!";
         String loginUrl = frontendUrl + "/login?tenant=" + tenant.getSubdomain();
+        String password = adminUser.getPassword();
+//        String emailContent = String.format(
+//                "Dear %s,\n\n" +
+//                        "Welcome to %s! Your school '%s' has been successfully registered.\n\n" +
+//                        "Login Details:\nURL: %s\nUsername: %s\nTenant: %s\n\n" +
+//                        "Please login and complete your school setup.\n\nBest regards,\n%s Team",
+//                adminUser.getFullName(), appName, tenant.getName(), loginUrl,
+//                adminUser.getUsername(), tenant.getSubdomain(), appName
+//        );
         String emailContent = String.format(
                 "Dear %s,\n\n" +
                         "Welcome to %s! Your school '%s' has been successfully registered.\n\n" +
-                        "Login Details:\nURL: %s\nUsername: %s\nTenant: %s\n\n" +
-                        "Please login and complete your school setup.\n\nBest regards,\n%s Team",
-                adminUser.getFullName(), appName, tenant.getName(), loginUrl,
-                adminUser.getUsername(), tenant.getSubdomain(), appName
+                        "Login Details:\n" +
+                        "URL: %s\n" +
+                        "Username: %s\n" +
+                        "User ID: %s\n" +
+                        "Password: %s\n" +
+                        "Tenant: %s\n\n" +
+                        "Please login and complete your school setup.\n\n" +
+                        "Best regards,\n%s Team",
+                adminUser.getFullName(),      // Dear %s
+                appName,                      // Welcome to %s
+                tenant.getName(),             // Your school '%s'
+                loginUrl,                     // URL: %s
+                adminUser.getUsername(),      // Username: %s
+                adminUser.getUserId(),       // User ID: %s
+                adminUser.getTempPasswordForFirstTime(),        // Password: %s (temporary system password)
+                tenant.getSubdomain(),        // Tenant: %s
+                appName                       // Best regards, %s Team
         );
+
         emailService.sendSimpleEmail(adminUser.getEmail(), subject, emailContent);
     }
 

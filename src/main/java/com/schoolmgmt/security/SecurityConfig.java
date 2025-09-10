@@ -75,6 +75,8 @@ public class SecurityConfig implements WebMvcConfigurer {
             "/swagger-ui/**",
             "/swagger-ui.html",
             "/actuator/health",
+            "/api/config/**",
+            "/config/**",
             "/error"
     };
 

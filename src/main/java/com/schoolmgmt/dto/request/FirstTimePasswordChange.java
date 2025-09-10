@@ -1,6 +1,10 @@
 package com.schoolmgmt.dto.request;
 
+
+
+
 import io.swagger.v3.oas.annotations.media.Schema;
+import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Size;
@@ -13,10 +17,8 @@ import lombok.NoArgsConstructor;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-@Schema(description = "Change password request")
-public class ChangePasswordRequest {
-
-
+@Schema(description = "Password reset request at first time")
+public class FirstTimePasswordChange {
 
     @NotBlank(message = "Current password is required")
     @Schema(description = "Current password")
@@ -34,3 +36,5 @@ public class ChangePasswordRequest {
     @Schema(description = "New password", example = "NewSecurePass123!")
     private String newPassword;
 }
+
+
