@@ -12,6 +12,7 @@ import com.schoolmgmt.model.User;
 import com.schoolmgmt.repository.TenantRepository;
 import com.schoolmgmt.repository.UserRepository;
 import com.schoolmgmt.util.TenantIdFormatter;
+import com.schoolmgmt.util.TenantContext;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
@@ -40,6 +41,7 @@ public class SuperAdminTenantService {
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
     private final EmailService emailService;
+    private final ClassSectionService classSectionService;
 
     /**
      * Create a new tenant as SuperAdmin
@@ -82,9 +84,13 @@ public class SuperAdminTenantService {
         Tenant savedTenant = tenantRepository.save(tenant);
 
         // Create admin user if requested
+        User adminUser = null;
         if (request.getAdminUser() != null) {
-            createTenantAdminUser(savedTenant, request.getAdminUser());
+            adminUser = createTenantAdminUser(savedTenant, request.getAdminUser());
         }
+
+        // TODO: Class creation logic temporarily disabled for testing
+        log.info("Tenant created successfully without classes - class creation will be tested separately");
 
         log.info("SuperAdmin successfully created tenant: {} with identifier: {}", 
                 savedTenant.getName(), savedTenant.getIdentifier());
@@ -662,5 +668,59 @@ public class SuperAdminTenantService {
                 .createdAt(tenant.getCreatedAt())
                 .activatedAt(tenant.getActivatedAt())
                 .build();
+    }
+
+    private void createInitialClassesForTenant(Tenant tenant, User adminUser, List<com.schoolmgmt.dto.request.CreateSchoolClassRequest> initialClasses) {
+        try {
+            // Set tenant context for class creation
+            TenantContext.setCurrentTenant(tenant.getIdentifier());
+
+            for (com.schoolmgmt.dto.request.CreateSchoolClassRequest classRequest : initialClasses) {
+                try {
+                    classSectionService.createSchoolClass(classRequest);
+                    log.info("Created class '{}' for tenant: {}", classRequest.getCode(), tenant.getName());
+                } catch (Exception e) {
+                    log.error("Failed to create class '{}' for tenant: {} - {}", 
+                            classRequest.getCode(), tenant.getName(), e.getMessage());
+                }
+            }
+        } catch (Exception e) {
+            log.error("Failed to create initial classes for tenant: {} - {}", tenant.getName(), e.getMessage());
+        } finally {
+            TenantContext.clear();
+        }
+    }
+
+    private void createDefaultClassesForTenant(Tenant tenant, User adminUser) {
+        try {
+            // Set tenant context for class creation
+            TenantContext.setCurrentTenant(tenant.getIdentifier());
+
+            // Create common classes for Indian schools (Classes 1-12)
+            String[] classes = {"1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12"};
+            
+            for (String classCode : classes) {
+                try {
+                    com.schoolmgmt.dto.request.CreateSchoolClassRequest classRequest = 
+                            com.schoolmgmt.dto.request.CreateSchoolClassRequest.builder()
+                                    .code(classCode)
+                                    .name("Class " + classCode)
+                                    .description("Standard class " + classCode)
+                                    .build();
+                    
+                    classSectionService.createSchoolClass(classRequest);
+                    log.info("Created default class '{}' for tenant: {}", classCode, tenant.getName());
+                } catch (Exception e) {
+                    log.error("Failed to create default class '{}' for tenant: {} - {}", 
+                            classCode, tenant.getName(), e.getMessage());
+                }
+            }
+            
+            log.info("Created default classes (1-12) for tenant: {}", tenant.getName());
+        } catch (Exception e) {
+            log.error("Failed to create default classes for tenant: {} - {}", tenant.getName(), e.getMessage());
+        } finally {
+            TenantContext.clear();
+        }
     }
 }

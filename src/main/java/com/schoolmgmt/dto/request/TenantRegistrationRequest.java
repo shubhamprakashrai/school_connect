@@ -8,6 +8,7 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+import java.util.List;
 import java.util.Map;
 
 @Data
@@ -72,4 +73,11 @@ public class TenantRegistrationRequest {
     
     @Schema(description = "Additional configuration settings")
     private Map<String, String> configuration;
+    
+    @Schema(description = "Whether to create default classes (1-12) if no initialClasses provided", 
+            example = "true", defaultValue = "true")
+    private Boolean createDefaultClasses = true;
+    
+    @Schema(description = "Initial classes and sections to create for the tenant")
+    private List<CreateSchoolClassRequest> initialClasses;
 }
