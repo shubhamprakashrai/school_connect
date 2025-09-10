@@ -14,8 +14,8 @@ import java.util.UUID;
 public interface SubjectRepository extends JpaRepository<Subject, UUID> {
     
     @Query("SELECT s FROM Subject s WHERE s.tenantId = :tenantId")
-    List<Subject> findAllByTenantId(@Param("tenantId") UUID tenantId);
+    List<Subject> findAllByTenantId(@Param("tenantId") String tenantId);
     
     @Query("SELECT s FROM Subject s WHERE s.tenantId = :tenantId AND s.code = :code")
-    Optional<Subject> findByTenantIdAndCode(@Param("tenantId") UUID tenantId, @Param("code") String code);
+    Optional<Subject> findByTenantIdAndCode(@Param("tenantId") String tenantId, @Param("code") String code);
 }

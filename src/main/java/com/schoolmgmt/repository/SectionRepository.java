@@ -14,8 +14,8 @@ import java.util.UUID;
 public interface SectionRepository extends JpaRepository<Section, UUID> {
     
     @Query("SELECT s FROM Section s WHERE s.tenantId = :tenantId AND s.schoolClassId = :schoolClassId")
-    List<Section> findByTenantIdAndSchoolClassId(@Param("tenantId") UUID tenantId, @Param("schoolClassId") UUID schoolClassId);
+    List<Section> findByTenantIdAndSchoolClassId(@Param("tenantId") String tenantId, @Param("schoolClassId") UUID schoolClassId);
     
     @Query("SELECT s FROM Section s WHERE s.tenantId = :tenantId AND s.schoolClassId = :schoolClassId AND s.name = :name")
-    Optional<Section> findByTenantIdAndSchoolClassIdAndName(@Param("tenantId") UUID tenantId, @Param("schoolClassId") UUID schoolClassId, @Param("name") String name);
+    Optional<Section> findByTenantIdAndSchoolClassIdAndName(@Param("tenantId") String tenantId, @Param("schoolClassId") UUID schoolClassId, @Param("name") String name);
 }

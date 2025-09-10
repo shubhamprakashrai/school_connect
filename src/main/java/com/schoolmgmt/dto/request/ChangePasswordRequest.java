@@ -23,8 +23,7 @@ public class ChangePasswordRequest {
     private String currentPassword;
 
 
-    @NotBlank(message = "User name is required")
-    @Schema(description = "User Name")
+    @Schema(description = "User Name (optional - will use authenticated user if not provided)")
     private String username;
 
     @NotBlank(message = "New password is required")

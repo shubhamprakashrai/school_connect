@@ -14,8 +14,8 @@ import java.util.UUID;
 public interface SchoolClassRepository extends JpaRepository<SchoolClass, UUID> {
     
     @Query("SELECT sc FROM SchoolClass sc WHERE sc.tenantId = :tenantId")
-    List<SchoolClass> findAllByTenantId(@Param("tenantId") UUID tenantId);
+    List<SchoolClass> findAllByTenantId(@Param("tenantId") String tenantId);
     
     @Query("SELECT sc FROM SchoolClass sc WHERE sc.tenantId = :tenantId AND sc.code = :code")
-    Optional<SchoolClass> findByTenantIdAndCode(@Param("tenantId") UUID tenantId, @Param("code") String code);
+    Optional<SchoolClass> findByTenantIdAndCode(@Param("tenantId") String tenantId, @Param("code") String code);
 }

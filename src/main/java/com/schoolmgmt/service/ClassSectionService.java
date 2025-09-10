@@ -34,7 +34,7 @@ public class ClassSectionService {
         String tenantId = TenantContext.getCurrentTenant();
         
         // Check if class code already exists for this tenant
-        if (schoolClassRepository.findByTenantIdAndCode(UUID.fromString(tenantId), request.getCode()).isPresent()) {
+        if (schoolClassRepository.findByTenantIdAndCode(tenantId, request.getCode()).isPresent()) {
             throw new RuntimeException("Class with code '" + request.getCode() + "' already exists");
         }
         
@@ -84,7 +84,7 @@ public class ClassSectionService {
         
         // Check if section already exists for this class
         if (sectionRepository.findByTenantIdAndSchoolClassIdAndName(
-                UUID.fromString(tenantId), request.getSchoolClassId(), request.getName()).isPresent()) {
+                tenantId, request.getSchoolClassId(), request.getName()).isPresent()) {
             throw new RuntimeException("Section '" + request.getName() + "' already exists for this class");
         }
         
@@ -124,7 +124,7 @@ public class ClassSectionService {
     
     public Page<SchoolClassResponse> getAllClasses(Pageable pageable) {
         String tenantId = TenantContext.getCurrentTenant();
-        List<SchoolClass> classes = schoolClassRepository.findAllByTenantId(UUID.fromString(tenantId));
+        List<SchoolClass> classes = schoolClassRepository.findAllByTenantId(tenantId);
         
         List<SchoolClassResponse> responses = classes.stream()
                 .map(this::buildClassResponse)
@@ -147,7 +147,7 @@ public class ClassSectionService {
     
     public List<SectionResponse> getSectionsByClassId(UUID classId) {
         String tenantId = TenantContext.getCurrentTenant();
-        List<Section> sections = sectionRepository.findByTenantIdAndSchoolClassId(UUID.fromString(tenantId), classId);
+        List<Section> sections = sectionRepository.findByTenantIdAndSchoolClassId(tenantId, classId);
         
         SchoolClass schoolClass = schoolClassRepository.findById(classId)
                 .orElseThrow(() -> new RuntimeException("School class not found"));

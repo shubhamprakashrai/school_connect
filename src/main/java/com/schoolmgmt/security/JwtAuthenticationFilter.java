@@ -110,7 +110,14 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
         return normalized.equals("/api/tenants/register") ||
                 normalized.equals("/error") ||
-                normalized.startsWith("/api/auth/") ||
+                normalized.equals("/api/auth/login") ||
+                normalized.equals("/api/auth/register") ||
+                normalized.equals("/api/auth/refresh") ||
+                normalized.equals("/api/auth/forgot-password") ||
+                normalized.equals("/api/auth/reset-password") ||
+                normalized.equals("/api/auth/Initialreset-password") ||
+                normalized.equals("/api/auth/verify-email") ||
+                normalized.equals("/api/auth/resend-verification") ||
                 normalized.startsWith("/api/public/") ||
                 normalized.startsWith("/swagger-ui") ||
                 normalized.startsWith("/v3/api-docs") ||

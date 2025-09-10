@@ -408,7 +408,7 @@ public class AuthenticationService {
      */
     public void changePassword(String username, ChangePasswordRequest request) {
         User user = userRepository.findByUsernameOrEmailAndTenantId(
-                        request.getUsername(), TenantContext.getCurrentTenant())
+                        username, TenantContext.getCurrentTenant())
             .orElseThrow(() -> new UsernameNotFoundException("User not found"));
         
         // Verify current password
