@@ -28,4 +28,7 @@ public class AuthResponse {
     
     @Schema(description = "User information")
     private UserInfo user;
+
+    @Schema(description = "Indicates whether the user must reset their password before continuing")
+    private boolean passwordResetRequired;   // 🔑 new field
 }

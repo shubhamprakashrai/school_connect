@@ -4,6 +4,7 @@ import com.schoolmgmt.dto.ApiResponse;
 import com.schoolmgmt.dto.common.UserInfo;
 import com.schoolmgmt.dto.request.*;
 import com.schoolmgmt.dto.response.AuthResponse;
+import com.schoolmgmt.exception.PasswordChangeException;
 import com.schoolmgmt.model.User;
 import com.schoolmgmt.repository.UserRepository;
 import com.schoolmgmt.security.JwtService;
@@ -32,6 +33,7 @@ import java.util.UUID;
 @Slf4j
 @Transactional
 public class AuthenticationService {
+
 
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
@@ -65,7 +67,8 @@ public class AuthenticationService {
             if (!user.isAccountNonLocked()) {
                 if (user.getLockedUntil() != null && LocalDateTime.now().isBefore(user.getLockedUntil())) {
                     throw new BadCredentialsException("Account is locked. Please try again later.");
-                } else {
+                }
+                    else {
                     // Unlock if lock period has expired
                     userRepository.unlockUserAccount(user.getId());
                     user.setAccountNonLocked(true);
@@ -90,6 +93,25 @@ public class AuthenticationService {
                 // Increment failed login attempts
                 handleFailedLogin(user);
                 throw new BadCredentialsException("Invalid credentials");
+            }
+
+
+            // ✅ If user is still using system-provided password
+            if (!user.isTemporaryPassword()) {
+                // Return response without tokens, but with reset flag
+                return AuthResponse.builder()
+                        .user(UserInfo.builder()
+                                .id(user.getId().toString())
+                                .email(user.getEmail())
+                                .firstName(user.getFirstName())
+                                .lastName(user.getLastName())
+                                .role(user.getRole().name())
+                                .tenantId(user.getTenantId())
+                                .emailVerified(user.isEmailVerified())
+                                .mfaEnabled(user.isMfaEnabled())
+                                .build())
+                        .passwordResetRequired(true) // 🔑 frontend can redirect to reset-password
+                        .build();
             }
             
             // Reset failed attempts on successful login
@@ -122,6 +144,7 @@ public class AuthenticationService {
                 .tokenType("Bearer")
                 .expiresIn(jwtExpiration / 1000) // Convert to seconds
                 .user(userInfo)
+                    .passwordResetRequired(false)
                 .build();
                 
         } finally {
@@ -245,7 +268,51 @@ public class AuthenticationService {
         
         log.info("User logged out: {}", username);
     }
-    
+
+    /**
+     * Reset Password First Time
+     */
+    @Transactional
+    public void firstTimePasswordChange(FirstTimePasswordChange request) {
+        log.info("Password reset confirmation attempt for username {}", request.getUsername());
+
+        userRepository.findByUsernameOrEmail(request.getUsername())
+                .ifPresent(user -> {
+                    try {
+                        // Set current tenant for multi-tenant handling
+                        TenantContext.setCurrentTenant(user.getTenantId());
+
+                        // 1. Validate if user requires initial reset
+                        if (user.isTemporaryPassword()) {
+                            throw new PasswordChangeException("Initial reset not required");
+                        }
+
+                        // 2. Validate current password
+                        if (!passwordEncoder.matches(request.getCurrentPassword(), user.getPassword())) {
+                            throw new PasswordChangeException("Invalid current password");
+                        }
+
+                        // 3. Encode new password
+                        String encodedNewPassword = passwordEncoder.encode(request.getNewPassword());
+
+                        // 4. Update password + flags in DB
+                        int updated = userRepository.setInitialPasswordReset(user.getId(), encodedNewPassword, LocalDateTime.now());
+                        log.info("Password update result = {}", updated);
+
+                        if (updated == 0) {
+                            throw new PasswordChangeException("Password update failed, no row updated!");
+                        }
+
+                        // Optionally, send confirmation email
+                        emailService.sendPasswordChangeConfirmation(user);
+
+                    } finally {
+                        // Always clear tenant context to prevent memory leaks
+                        TenantContext.clear();
+                    }
+                });
+    }
+
     /**
      * Initiate password reset
      */
@@ -255,7 +322,7 @@ public class AuthenticationService {
             .ifPresent(user -> {
                 try {
                     TenantContext.setCurrentTenant(user.getTenantId());
-                    
+
                     String resetToken = generateToken();
                     LocalDateTime expiry = LocalDateTime.now().plusHours(1);
                     
@@ -341,7 +408,7 @@ public class AuthenticationService {
      */
     public void changePassword(String username, ChangePasswordRequest request) {
         User user = userRepository.findByUsernameOrEmailAndTenantId(
-            username, TenantContext.getCurrentTenant())
+                        request.getUsername(), TenantContext.getCurrentTenant())
             .orElseThrow(() -> new UsernameNotFoundException("User not found"));
         
         // Verify current password
@@ -351,15 +418,17 @@ public class AuthenticationService {
         
         // Update password
         String encodedPassword = passwordEncoder.encode(request.getNewPassword());
+//        userRepository.updatePassword(user.getId(), encodedPassword, LocalDateTime.now());
         userRepository.updatePassword(user.getId(), encodedPassword, LocalDateTime.now());
-        
+
+
         // Send confirmation email
         emailService.sendPasswordChangeConfirmation(user);
         
         log.info("Password changed for user: {}", username);
     }
     
-    /**
+    /**w
      * Handle failed login attempt
      */
     private void handleFailedLogin(User user) {

@@ -1,6 +1,7 @@
 package com.schoolmgmt.repository;
 
 import com.schoolmgmt.model.User;
+import jakarta.transaction.Transactional;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
@@ -60,7 +61,19 @@ public interface UserRepository extends JpaRepository<User, UUID> {
     Integer findMaxSequenceForTenant(@Param("tenantPrefix") String tenantPrefix);
 
 
+    /**
+     * Check if email exists
+     * @param email The email
+     * @return true if exists, false otherwise
+     */
+    boolean existsByEmail(String email);
 
+    /**
+     * Check if phone exists
+     * @param phone The phone
+     * @return true if exists, false otherwise
+     */
+    boolean existsByPhone(String phone);
 
 
     /**
@@ -138,7 +151,7 @@ public interface UserRepository extends JpaRepository<User, UUID> {
      * Update user password
      */
     @Modifying
-    @Query("UPDATE User u SET u.password = :password, u.lastPasswordChangeAt = :changeTime, u.passwordResetToken = NULL, u.passwordResetTokenExpiry = NULL WHERE u.id = :userId")
+    @Query("UPDATE User u SET u.password = :password, u.lastPasswordChangeAt = :changeTime, u.temporaryPassword=true ,u.passwordResetToken = NULL, u.passwordResetTokenExpiry = NULL WHERE u.id = :userId")
     void updatePassword(@Param("userId") UUID userId, @Param("password") String password, @Param("changeTime") LocalDateTime changeTime);
 
     /**
@@ -147,6 +160,37 @@ public interface UserRepository extends JpaRepository<User, UUID> {
     @Modifying
     @Query("UPDATE User u SET u.passwordResetToken = :token, u.passwordResetTokenExpiry = :expiry WHERE u.id = :userId")
     void setPasswordResetToken(@Param("userId") UUID userId, @Param("token") String token, @Param("expiry") LocalDateTime expiry);
+
+    /**
+     * Set Initial password reset token
+     */
+    @Modifying(clearAutomatically = true, flushAutomatically = true)
+    @Transactional
+    @Query("UPDATE User u " +
+            "SET u.password = :password, " +
+            "u.temporaryPassword = true, " +
+            "u.lastPasswordChangeAt = :changedAt " +
+            "WHERE u.id = :userId")
+    int setInitialPasswordReset(@Param("userId") UUID userId,
+                       @Param("password") String password,
+                       @Param("changedAt") LocalDateTime changedAt);
+
+
+
+//    @Modifying(clearAutomatically = true, flushAutomatically = true)
+//    @Transactional
+//    @Query("UPDATE User u SET u.password = :password, " +
+//            "u.passwordResetToken = null, " +
+//            "u.passwordResetTokenExpiry = null, " +
+//            "u.temporaryPassword = false, " +
+//            "u.lastPasswordChangeAt = :changedAt " +
+//            "WHERE u.id = :userId")
+//    int setInitialPasswordReset(@Param("userId") UUID userId,
+//                       @Param("password") String password,
+//                       @Param("changedAt") LocalDateTime changedAt);
+
+
+
 
     /**
      * Verify email

@@ -237,4 +237,15 @@ public class GlobalExceptionHandler {
         String profile = System.getProperty("spring.profiles.active", "");
         return profile.contains("dev") || profile.contains("local");
     }
+     /**
+        * Handle all password change  exceptions
+     */
+
+    @ExceptionHandler(PasswordChangeException.class)
+    public ResponseEntity<ApiResponse> handlePasswordChangeException(PasswordChangeException ex) {
+        log.warn("Password change failed: {}", ex.getMessage());
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                .body(ApiResponse.error(ex.getMessage()));
+    }
+
 }
