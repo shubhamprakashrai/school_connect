@@ -1,5 +1,6 @@
 package com.schoolmgmt.model;
 
+import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.persistence.*;
 import lombok.*;
 import org.springframework.security.core.GrantedAuthority;
@@ -112,6 +113,12 @@ public class User extends BaseEntity implements UserDetails, TenantAware {
     @OneToOne(mappedBy = "user", fetch = FetchType.LAZY)
     private Student studentProfile;
 
+    @Column(name = "is_temporary_password")
+    private boolean temporaryPassword ;
+
+    @Column(name = "tempPasswordForFirstTime")
+    private String tempPasswordForFirstTime;
+
     // We can add ParentProfile later
 
     public enum UserRole {
@@ -207,4 +214,7 @@ public class User extends BaseEntity implements UserDetails, TenantAware {
     public void setEnabled(boolean enabled) {
         this.isActive = enabled;
     }
+
+
+
 }

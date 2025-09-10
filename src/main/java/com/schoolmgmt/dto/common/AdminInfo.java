@@ -18,4 +18,6 @@ public class AdminInfo {
     private String email;
     private String firstName;
     private String lastName;
+    private boolean isTemporaryPassword;
+
 }
