@@ -215,6 +215,10 @@ public class User extends BaseEntity implements UserDetails, TenantAware {
         this.isActive = enabled;
     }
 
+    public void setActive(boolean active) {
+        this.isActive = active;
+    }
+
 
 
 }

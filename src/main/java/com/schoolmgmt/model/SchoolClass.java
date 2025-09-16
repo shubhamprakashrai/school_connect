@@ -3,6 +3,7 @@ package com.schoolmgmt.model;
 import jakarta.persistence.*;
 import lombok.*;
 
+import java.util.HashSet;
 import java.util.Set;
 
 /**
@@ -44,5 +45,18 @@ public class SchoolClass extends BaseEntity {
      * The sections that belong to this class.
      */
     @OneToMany(mappedBy = "schoolClass", cascade = CascadeType.ALL, orphanRemoval = true)
-    private Set<Section> sections;
+    @Builder.Default
+    private Set<Section> sections = new HashSet<>();
+
+    /**
+     * The subjects taught in this class.
+     */
+    @ManyToMany(cascade = {CascadeType.PERSIST, CascadeType.MERGE})
+    @JoinTable(
+        name = "class_subjects",
+        joinColumns = @JoinColumn(name = "class_id"),
+        inverseJoinColumns = @JoinColumn(name = "subject_id")
+    )
+    @Builder.Default
+    private Set<Subject> subjects = new HashSet<>();
 }

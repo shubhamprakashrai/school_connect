@@ -27,6 +27,11 @@ public interface TeacherRepository extends JpaRepository<Teacher, UUID>, JpaSpec
     Optional<Teacher> findByEmployeeIdAndTenantId(String employeeId, String tenantId);
 
     /**
+     * Find teacher by employee ID (for current tenant)
+     */
+    Optional<Teacher> findByEmployeeId(String employeeId);
+
+    /**
      * Find teacher by email and tenant
      */
     Optional<Teacher> findByEmailAndTenantId(String email, String tenantId);

@@ -29,6 +29,11 @@ public interface TeacherClassRepository extends JpaRepository<TeacherClass, UUID
     List<TeacherClass> findByTeacherIdAndTenantId(UUID teacherId, String tenantId);
 
     /**
+     * Find all assignments for teacher
+     */
+    List<TeacherClass> findByTeacherId(UUID teacherId);
+
+    /**
      * Find teachers assigned to a class
      */
     List<TeacherClass> findBySectionIdAndIsActiveTrueAndTenantId(UUID sectionId, String tenantId);

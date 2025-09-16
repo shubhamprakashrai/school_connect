@@ -26,6 +26,27 @@ public interface AttendanceRepository extends JpaRepository<Attendance, UUID>, J
     Optional<Attendance> findByStudentIdAndAttendanceDateAndTenantId(UUID studentId, LocalDate date, String tenantId);
 
     /**
+     * Find attendance by student ID (paginated)
+     */
+    Page<Attendance> findByStudentId(UUID studentId, Pageable pageable);
+
+    /**
+     * Find attendance by date (paginated)
+     */
+    Page<Attendance> findByAttendanceDate(LocalDate date, Pageable pageable);
+
+    /**
+     * Find attendance by student ID and date range
+     */
+    List<Attendance> findByStudentIdAndAttendanceDateBetween(UUID studentId, LocalDate startDate, LocalDate endDate);
+
+    /**
+     * Find attendance by teacher class section ID (paginated)
+     */
+    @Query("SELECT a FROM Attendance a JOIN a.teacherClass tc WHERE tc.sectionId = :sectionId")
+    Page<Attendance> findByTeacherClass_SectionId(@Param("sectionId") UUID sectionId, Pageable pageable);
+
+    /**
      * Find attendance by class and date
      */
     List<Attendance> findByTeacherClassIdAndAttendanceDateAndTenantId(UUID teacherClassId, LocalDate date, String tenantId);

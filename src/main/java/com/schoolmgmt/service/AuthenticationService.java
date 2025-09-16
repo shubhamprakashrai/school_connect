@@ -97,7 +97,7 @@ public class AuthenticationService {
 
 
             // ✅ If user is still using system-provided password
-            if (!user.isTemporaryPassword()) {
+            if (user.isTemporaryPassword()) {
                 // Return response without tokens, but with reset flag
                 return AuthResponse.builder()
                         .user(UserInfo.builder()

@@ -96,6 +96,16 @@ public abstract class BaseEntity implements Serializable, TenantAware {
         this.deletedBy = null;
     }
 
+    /**
+     * Convenience method for setting deleted status
+     */
+    public void setDeleted(Boolean deleted) {
+        this.isDeleted = deleted;
+        if (deleted != null && deleted) {
+            this.deletedAt = LocalDateTime.now();
+        }
+    }
+
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;

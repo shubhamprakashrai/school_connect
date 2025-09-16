@@ -18,4 +18,7 @@ public interface SchoolClassRepository extends JpaRepository<SchoolClass, UUID> 
     
     @Query("SELECT sc FROM SchoolClass sc WHERE sc.tenantId = :tenantId AND sc.code = :code")
     Optional<SchoolClass> findByTenantIdAndCode(@Param("tenantId") String tenantId, @Param("code") String code);
+    
+    @Query("SELECT sc FROM SchoolClass sc WHERE sc.id = :id AND sc.tenantId = :tenantId")
+    Optional<SchoolClass> findByIdAndTenantId(@Param("id") UUID id, @Param("tenantId") String tenantId);
 }
