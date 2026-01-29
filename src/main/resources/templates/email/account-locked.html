@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Account Locked</title>
+</head>
+<body style="margin: 0; padding: 0; font-family: Arial, Helvetica, sans-serif; background-color: #f4f4f4;">
+    <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="max-width: 600px; margin: 0 auto; background-color: #ffffff;">
+        <tr>
+            <td style="padding: 40px 30px; text-align: center; background-color: #1a73e8;">
+                <h1 style="color: #ffffff; margin: 0; font-size: 24px;" th:text="${appName}">School Management System</h1>
+            </td>
+        </tr>
+        <tr>
+            <td style="padding: 40px 30px;">
+                <h2 style="color: #333333; margin: 0 0 20px;">Account Locked</h2>
+                <p style="color: #555555; font-size: 16px; line-height: 1.5;">
+                    Dear <span th:text="${userName}">User</span>,
+                </p>
+                <p style="color: #555555; font-size: 16px; line-height: 1.5;">
+                    Your account has been temporarily locked due to multiple failed login attempts.
+                </p>
+                <p style="color: #555555; font-size: 16px; line-height: 1.5;">
+                    Your account will be automatically unlocked after
+                    <strong th:text="${lockDuration}">30</strong> minutes.
+                </p>
+                <p style="color: #555555; font-size: 14px; line-height: 1.5; margin-top: 20px;">
+                    If you did not attempt to log in, someone else may be trying to access your account. We recommend resetting your password after your account is unlocked.
+                </p>
+                <p style="color: #999999; font-size: 13px; line-height: 1.5; margin-top: 30px;">
+                    If you need immediate assistance, please contact your school administrator.
+                </p>
+            </td>
+        </tr>
+        <tr>
+            <td style="padding: 20px 30px; text-align: center; background-color: #f8f8f8; border-top: 1px solid #eeeeee;">
+                <p style="color: #999999; font-size: 12px; margin: 0;">
+                    &copy; <span th:text="${appName}">School Management System</span>. All rights reserved.
+                </p>
+            </td>
+        </tr>
+    </table>
+</body>
+</html>
