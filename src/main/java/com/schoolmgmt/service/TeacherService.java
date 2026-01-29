@@ -91,15 +91,19 @@ public class TeacherService {
         return teacherClassRepository.save(assignment);
     }
 
+    @Transactional(readOnly = true)
     public Page<Teacher> getAllTeachers(Pageable pageable) {
-        return teacherRepository.findAll(pageable);
+        String tenantId = com.schoolmgmt.util.TenantContext.requireCurrentTenant();
+        return teacherRepository.findByTenantId(tenantId, pageable);
     }
 
+    @Transactional(readOnly = true)
     public Teacher getTeacherById(UUID id) {
         return teacherRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Teacher", "id", id));
     }
 
+    @Transactional(readOnly = true)
     public Teacher getTeacherByEmployeeId(String employeeId) {
         return teacherRepository.findByEmployeeId(employeeId)
                 .orElseThrow(() -> new ResourceNotFoundException("Teacher", "employeeId", employeeId));
@@ -146,6 +150,7 @@ public class TeacherService {
         teacherRepository.save(teacher);
     }
 
+    @Transactional(readOnly = true)
     public List<TeacherClass> getTeacherAssignments(UUID teacherId) {
         return teacherClassRepository.findByTeacherId(teacherId);
     }

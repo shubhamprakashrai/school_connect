@@ -89,8 +89,11 @@ public class SuperAdminTenantService {
             adminUser = createTenantAdminUser(savedTenant, request.getAdminUser());
         }
 
-        // TODO: Class creation logic temporarily disabled for testing
-        log.info("Tenant created successfully without classes - class creation will be tested separately");
+        // Create default classes for the tenant (Classes 1-12)
+        if (adminUser != null) {
+            createDefaultClassesForTenant(savedTenant, adminUser);
+            log.info("Created default classes (1-12) for tenant: {}", savedTenant.getName());
+        }
 
         log.info("SuperAdmin successfully created tenant: {} with identifier: {}", 
                 savedTenant.getName(), savedTenant.getIdentifier());

@@ -2,6 +2,8 @@ package com.schoolmgmt.util;
 
 import lombok.extern.slf4j.Slf4j;
 
+import java.util.UUID;
+
 /**
  * ThreadLocal holder for current tenant context.
  * Used to maintain tenant information throughout the request lifecycle.
@@ -32,6 +34,15 @@ public class TenantContext {
         return currentTenant.get();
     }
     
+    /**
+     * Get the current tenant identifier as UUID
+     * @return The current tenant identifier as UUID or null if not set
+     */
+    public static UUID getCurrentTenantId() {
+        String tenant = currentTenant.get();
+        return tenant != null ? UUID.fromString(tenant) : null;
+    }
+
     /**
      * Clear the current tenant context
      * Important: Must be called after request processing to prevent memory leaks

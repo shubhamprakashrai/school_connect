@@ -2,6 +2,8 @@ package com.schoolmgmt.repository;
 
 import com.schoolmgmt.model.User;
 import jakarta.transaction.Transactional;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
@@ -85,6 +87,11 @@ public interface UserRepository extends JpaRepository<User, UUID> {
      * Find users by tenant ID
      */
     List<User> findByTenantId(String tenantId);
+
+    /**
+     * Find users by tenant ID with pagination
+     */
+    Page<User> findByTenantId(String tenantId, Pageable pageable);
 
     /**
      * Find users by role and tenant ID

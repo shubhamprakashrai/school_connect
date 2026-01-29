@@ -201,6 +201,7 @@ public class StudentService {
     /**
      * Get student by ID
      */
+    @Transactional(readOnly = true)
     public StudentResponse getStudentById(UUID studentId) {
         String tenantId = TenantContext.requireCurrentTenant();
         
@@ -218,6 +219,7 @@ public class StudentService {
     /**
      * Get all students with filtering and pagination
      */
+    @Transactional(readOnly = true)
     public Page<StudentResponse> getAllStudents(StudentFilterRequest filter, Pageable pageable) {
         String tenantId = TenantContext.requireCurrentTenant();
         
@@ -300,38 +302,43 @@ public class StudentService {
     /**
      * Get student statistics
      */
+    @Transactional(readOnly = true)
     public StudentStatistics getStudentStatistics() {
         String tenantId = TenantContext.requireCurrentTenant();
-        
-        long totalStudents = studentRepository.countByTenantIdAndStatus(tenantId, null);
+
         long activeStudents = studentRepository.countByTenantIdAndStatus(tenantId, Student.StudentStatus.ACTIVE);
-        
-        // Get statistics by class
+
+        // Get statistics by class (also gives us male/female counts in a single query)
         List<Object[]> classStats = studentRepository.getStudentStatisticsByClass(tenantId);
         Map<String, Long> studentsByClass = new HashMap<>();
         long maleStudents = 0;
         long femaleStudents = 0;
-        
+
         for (Object[] stat : classStats) {
             String classId = (String) stat[0];
             Long count = (Long) stat[1];
             Long males = (Long) stat[2];
             Long females = (Long) stat[3];
-            
+
             studentsByClass.put(classId, count);
             maleStudents += males;
             femaleStudents += females;
         }
-        
-        // Get statistics by status
+
+        // Build status counts: query each status once (7 queries instead of N+1 with null)
+        // This is more explicit and avoids the countByTenantIdAndStatus(tenantId, null) call
+        // which may not behave as expected with null status parameter
         Map<String, Long> studentsByStatus = new HashMap<>();
+        long totalStudents = 0;
+
         for (Student.StudentStatus status : Student.StudentStatus.values()) {
             long count = studentRepository.countByTenantIdAndStatus(tenantId, status);
             if (count > 0) {
                 studentsByStatus.put(status.name(), count);
             }
+            totalStudents += count;
         }
-        
+
         return StudentStatistics.builder()
                 .totalStudents(totalStudents)
                 .activeStudents(activeStudents)

@@ -34,7 +34,7 @@ import java.util.UUID;
 @RequiredArgsConstructor
 @Slf4j
 @Tag(name = "SuperAdmin Tenant Management", description = "SuperAdmin APIs for managing all tenants in the system")
-@SecurityRequirement(name = "Bearer Authentication")
+@SecurityRequirement(name = "bearerAuth")
 public class SuperAdminTenantController {
 
     private final SuperAdminTenantService superAdminTenantService;

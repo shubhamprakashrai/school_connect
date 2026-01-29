@@ -62,26 +62,32 @@ public class AttendanceService {
                 .collect(Collectors.toList());
     }
 
+    @Transactional(readOnly = true)
     public Page<Attendance> getAllAttendance(Pageable pageable) {
         return attendanceRepository.findAll(pageable);
     }
 
+    @Transactional(readOnly = true)
     public Page<Attendance> getAttendanceByStudent(UUID studentId, Pageable pageable) {
         return attendanceRepository.findByStudentId(studentId, pageable);
     }
 
+    @Transactional(readOnly = true)
     public Page<Attendance> getAttendanceByClass(UUID classId, Pageable pageable) {
         return attendanceRepository.findByTeacherClass_SectionId(classId, pageable);
     }
 
+    @Transactional(readOnly = true)
     public Page<Attendance> getAttendanceByDate(LocalDate date, Pageable pageable) {
         return attendanceRepository.findByAttendanceDate(date, pageable);
     }
 
+    @Transactional(readOnly = true)
     public List<Attendance> getAttendanceByDateRange(UUID studentId, LocalDate startDate, LocalDate endDate) {
         return attendanceRepository.findByStudentIdAndAttendanceDateBetween(studentId, startDate, endDate);
     }
 
+    @Transactional(readOnly = true)
     public Map<String, Object> getAttendancePercentage(UUID studentId, LocalDate startDate, LocalDate endDate) {
         // Set default date range if not provided
         if (startDate == null) {
@@ -92,17 +98,21 @@ public class AttendanceService {
         }
 
         List<Attendance> attendanceRecords = getAttendanceByDateRange(studentId, startDate, endDate);
-        
+
         long totalDays = attendanceRecords.size();
-        long presentDays = attendanceRecords.stream()
-                .mapToLong(attendance -> attendance.getStatus() == Attendance.AttendanceStatus.PRESENT ? 1 : 0)
-                .sum();
-        long absentDays = attendanceRecords.stream()
-                .mapToLong(attendance -> attendance.getStatus() == Attendance.AttendanceStatus.ABSENT ? 1 : 0)
-                .sum();
-        long lateDays = attendanceRecords.stream()
-                .mapToLong(attendance -> attendance.getStatus() == Attendance.AttendanceStatus.LATE ? 1 : 0)
-                .sum();
+        long presentDays = 0;
+        long absentDays = 0;
+        long lateDays = 0;
+
+        // Single-pass iteration instead of 3 separate stream operations
+        for (Attendance attendance : attendanceRecords) {
+            switch (attendance.getStatus()) {
+                case PRESENT -> presentDays++;
+                case ABSENT -> absentDays++;
+                case LATE -> lateDays++;
+                default -> { /* HALF_DAY, EXCUSED - counted in total but not categorized here */ }
+            }
+        }
 
         double attendancePercentage = totalDays > 0 ? (double) presentDays / totalDays * 100 : 0.0;
 

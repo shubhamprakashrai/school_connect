@@ -40,14 +40,16 @@ public class UserService {
      */
     public Page<UserResponse> getAllUsers(Pageable pageable) {
         String tenantId = TenantContext.requireCurrentTenant();
-        Page<User> users = userRepository.findAll(pageable);
-        
+        // Use tenant-filtered paginated query instead of findAll which loads users from ALL tenants
+        Page<User> users = userRepository.findByTenantId(tenantId, pageable);
+
         return users.map(this::toUserResponse);
     }
 
     /**
      * Get users by role
      */
+    @Transactional(readOnly = true)
     public List<UserResponse> getUsersByRole(String role) {
         String tenantId = TenantContext.requireCurrentTenant();
         User.UserRole userRole = User.UserRole.valueOf(role.toUpperCase());
@@ -61,6 +63,7 @@ public class UserService {
     /**
      * Get user by ID
      */
+    @Transactional(readOnly = true)
     public UserResponse getUserById(UUID userId) {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new ResourceNotFoundException("User", "id", userId));
@@ -273,15 +276,19 @@ public class UserService {
     /**
      * Get user statistics for tenant
      */
+    @Transactional(readOnly = true)
     public UserStatistics getUserStatistics() {
         String tenantId = TenantContext.requireCurrentTenant();
-        
-        long totalUsers = userRepository.count();
-        long activeUsers = userRepository.countActiveUsersByRoleAndTenant(null, tenantId);
+
+        // Use tenant-scoped queries instead of count() which counts ALL users across tenants
         long teachers = userRepository.countActiveUsersByRoleAndTenant(User.UserRole.TEACHER, tenantId);
         long students = userRepository.countActiveUsersByRoleAndTenant(User.UserRole.STUDENT, tenantId);
         long parents = userRepository.countActiveUsersByRoleAndTenant(User.UserRole.PARENT, tenantId);
-        
+        long admins = userRepository.countActiveUsersByRoleAndTenant(User.UserRole.ADMIN, tenantId);
+
+        long activeUsers = teachers + students + parents + admins;
+        long totalUsers = userRepository.findByTenantId(tenantId).size();
+
         return UserStatistics.builder()
                 .totalUsers(totalUsers)
                 .activeUsers(activeUsers)
