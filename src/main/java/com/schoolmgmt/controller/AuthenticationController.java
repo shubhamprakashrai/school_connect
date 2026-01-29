@@ -116,8 +116,8 @@ public class AuthenticationController {
 
     // when user login at first time navigate to the password reset
 
-    @PostMapping("/Initialreset-password")
-    @Operation(summary = "Inital Reset password", description = "Intial Reset password using original password")
+    @PostMapping("/initial-reset-password")
+    @Operation(summary = "Initial Reset password", description = "Initial Reset password using original password")
     @ApiResponses(value = {
             @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "Password reset successful"),
             @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "400", description = "Invalid or expired token")

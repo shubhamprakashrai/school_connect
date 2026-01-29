@@ -8,6 +8,7 @@ import com.schoolmgmt.model.User;
 import com.schoolmgmt.repository.CounselingReferralRepository;
 import com.schoolmgmt.repository.EmergencyAlertRepository;
 import com.schoolmgmt.repository.IncidentReportRepository;
+import com.schoolmgmt.model.NotificationLog;
 import com.schoolmgmt.util.TenantContext;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -34,6 +35,7 @@ public class SafetyService {
     private final IncidentReportRepository incidentRepository;
     private final CounselingReferralRepository counselingRepository;
     private final EmergencyAlertRepository alertRepository;
+    private final NotificationService notificationService;
 
     // ==================== INCIDENT REPORTS ====================
 
@@ -137,8 +139,20 @@ public class SafetyService {
         log.warn("EMERGENCY ALERT triggered: {} - Type: {} by user: {}",
                 saved.getId(), saved.getAlertType(), user.getUserId());
 
-        // TODO: Send push notifications to all relevant users
-        // notificationService.sendEmergencyAlert(saved);
+        // Send push notification to admins for emergency alert
+        try {
+            notificationService.sendToRole(
+                "ADMIN",
+                "Emergency Alert: " + saved.getTitle(),
+                saved.getMessage(),
+                NotificationLog.NotificationType.ANNOUNCEMENT,
+                null,
+                user.getUserId(),
+                user.getFirstName() + " " + user.getLastName()
+            );
+        } catch (Exception e) {
+            log.warn("Failed to send emergency alert notification: {}", e.getMessage());
+        }
 
         return saved;
     }
