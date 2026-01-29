@@ -4,6 +4,7 @@ import com.schoolmgmt.dto.ApiResponse;
 import com.schoolmgmt.dto.request.*;
 import com.schoolmgmt.dto.response.*;
 import com.schoolmgmt.dto.common.*;
+import com.schoolmgmt.service.StudentBulkService;
 import com.schoolmgmt.service.StudentService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
@@ -15,10 +16,13 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.web.PageableDefault;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.util.UUID;
 
@@ -34,6 +38,7 @@ import java.util.UUID;
 public class StudentController {
 
     private final StudentService studentService;
+    private final StudentBulkService studentBulkService;
 
     @PostMapping
     @Operation(summary = "Create new student", description = "Register a new student in the system")
@@ -130,12 +135,58 @@ public class StudentController {
             @RequestParam String query,
             @PageableDefault(size = 20, sort = "firstName", direction = Sort.Direction.ASC) Pageable pageable) {
         log.info("Searching students with query: {}", query);
-        
+
         StudentFilterRequest filter = StudentFilterRequest.builder()
                 .search(query)
                 .build();
-        
+
         Page<StudentResponse> students = studentService.getAllStudents(filter, pageable);
         return ResponseEntity.ok(students);
+    }
+
+    // ==================== Bulk Operations ====================
+
+    @PostMapping(value = "/import", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    @Operation(summary = "Import students from CSV", description = "Bulk import students from a CSV file")
+    @PreAuthorize("hasAnyRole('ADMIN', 'SUPER_ADMIN')")
+    public ResponseEntity<BulkImportResult> importStudents(
+            @RequestParam("file") MultipartFile file,
+            @RequestParam(value = "classId", required = false) String classId) {
+        log.info("Importing students from CSV, classId: {}", classId);
+        BulkImportResult result = studentBulkService.importStudentsFromCsv(file, classId);
+        return ResponseEntity.ok(result);
+    }
+
+    @GetMapping(value = "/export", produces = "text/csv")
+    @Operation(summary = "Export students to CSV", description = "Export students to a CSV file with optional filters")
+    @PreAuthorize("hasAnyRole('ADMIN', 'SUPER_ADMIN')")
+    public ResponseEntity<byte[]> exportStudents(
+            @RequestParam(value = "classId", required = false) String classId,
+            @RequestParam(value = "sectionId", required = false) String sectionId,
+            @RequestParam(value = "status", required = false) String status) {
+        log.info("Exporting students to CSV, classId: {}, sectionId: {}, status: {}", classId, sectionId, status);
+        byte[] csvData = studentBulkService.exportStudentsToCsv(classId, sectionId, status);
+
+        HttpHeaders headers = new HttpHeaders();
+        headers.setContentType(MediaType.parseMediaType("text/csv"));
+        headers.setContentDispositionFormData("attachment", "students_export.csv");
+        headers.setCacheControl("no-cache, no-store, must-revalidate");
+
+        return ResponseEntity.ok().headers(headers).body(csvData);
+    }
+
+    @GetMapping(value = "/import/template", produces = "text/csv")
+    @Operation(summary = "Download import template", description = "Download an empty CSV template for student import")
+    @PreAuthorize("hasAnyRole('ADMIN', 'SUPER_ADMIN')")
+    public ResponseEntity<byte[]> downloadImportTemplate() {
+        log.info("Downloading CSV import template");
+        byte[] templateData = studentBulkService.generateImportTemplate();
+
+        HttpHeaders headers = new HttpHeaders();
+        headers.setContentType(MediaType.parseMediaType("text/csv"));
+        headers.setContentDispositionFormData("attachment", "student_import_template.csv");
+        headers.setCacheControl("no-cache, no-store, must-revalidate");
+
+        return ResponseEntity.ok().headers(headers).body(templateData);
     }
 }
