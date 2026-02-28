@@ -1,11 +1,13 @@
 package com.schoolmgmt.service;
 
-import com.schoolmgmt.dto.ApiResponse;
+//import com.schoolmgmt.dto.ApiResponse;
+import  com.schoolmgmt.dto.ApiResponse;
 import com.schoolmgmt.dto.common.UserInfo;
 import com.schoolmgmt.dto.request.*;
 import com.schoolmgmt.dto.response.AuthResponse;
 import com.schoolmgmt.exception.PasswordChangeException;
 import com.schoolmgmt.model.User;
+import com.schoolmgmt.repository.TenantRepository;
 import com.schoolmgmt.repository.UserRepository;
 import com.schoolmgmt.security.JwtService;
 import com.schoolmgmt.util.TenantContext;
@@ -19,9 +21,10 @@ import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-
+import com.schoolmgmt.model.Tenant;
 import java.time.LocalDateTime;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
 
@@ -41,13 +44,14 @@ public class AuthenticationService {
     private final AuthenticationManager authenticationManager;
     private final EmailService emailService;
     private final TokenBlacklistService tokenBlacklistService;
-    
+    private final TenantRepository tenantRepository;
+
     @Value("${jwt.expiration}")
     private long jwtExpiration;
-    
+
     @Value("${app.max-login-attempts:5}")
     private int maxLoginAttempts;
-    
+
     @Value("${app.lockout-duration-minutes:30}")
     private int lockoutDurationMinutes;
 
@@ -58,36 +62,35 @@ public class AuthenticationService {
         try {
             // Find user across all tenants
             User user = userRepository.findByUsernameOrEmail(request.getUsername())
-                .orElseThrow(() -> new UsernameNotFoundException("Invalid credentials"));
-            
+                    .orElseThrow(() -> new UsernameNotFoundException("Invalid credentials"));
+
             // Set tenant context based on user's tenant
             TenantContext.setCurrentTenant(user.getTenantId());
-            
+
             // Check if account is locked
             if (!user.isAccountNonLocked()) {
                 if (user.getLockedUntil() != null && LocalDateTime.now().isBefore(user.getLockedUntil())) {
                     throw new BadCredentialsException("Account is locked. Please try again later.");
-                }
-                    else {
+                } else {
                     // Unlock if lock period has expired
                     userRepository.unlockUserAccount(user.getId());
                     user.setAccountNonLocked(true);
                     user.setFailedLoginAttempts(0);
                 }
             }
-            
+
             // Check if email is verified
             if (!user.isEmailVerified()) {
                 throw new BadCredentialsException("Email not verified. Please check your email for verification link.");
             }
-            
+
             // Authenticate
             try {
                 authenticationManager.authenticate(
-                    new UsernamePasswordAuthenticationToken(
-                        request.getUsername(),
-                        request.getPassword()
-                    )
+                        new UsernamePasswordAuthenticationToken(
+                                request.getUsername(),
+                                request.getPassword()
+                        )
                 );
             } catch (BadCredentialsException e) {
                 // Increment failed login attempts
@@ -113,62 +116,66 @@ public class AuthenticationService {
                         .passwordResetRequired(true) // 🔑 frontend can redirect to reset-password
                         .build();
             }
-            
+
             // Reset failed attempts on successful login
             if (user.getFailedLoginAttempts() > 0) {
                 userRepository.resetFailedLoginAttempts(user.getId());
             }
-            
+
             // Update last login
             userRepository.updateLastLogin(user.getId(), LocalDateTime.now());
-            
+
+            // Get student login required flag from tenant
+            Optional<Tenant> tenant = tenantRepository.findByIdentifier(user.getTenantId());
+            Boolean studentLoginRequired = tenant.isPresent() ? tenant.get().getStudentLoginRequired() : false;
+
             // Generate tokens
-            String accessToken = jwtService.generateToken(user, user.getTenantId(), user.getRole().name());
+            String accessToken = jwtService.generateToken(user, user.getTenantId(), user.getRole().name(), user.getUsername(), studentLoginRequired);
             String refreshToken = jwtService.generateRefreshToken(user);
-            
+
             // Build response
             UserInfo userInfo = UserInfo.builder()
-                .id(user.getId().toString())
-                .email(user.getEmail())
-                .firstName(user.getFirstName())
-                .lastName(user.getLastName())
-                .role(user.getRole().name())
-                .tenantId(user.getTenantId())
-                .emailVerified(user.isEmailVerified())
-                .mfaEnabled(user.isMfaEnabled())
-                .build();
-            
+                    .id(user.getId().toString())
+                    .email(user.getEmail())
+                    .firstName(user.getFirstName())
+                    .lastName(user.getLastName())
+                    .role(user.getRole().name())
+                    .tenantId(user.getTenantId())
+                    .emailVerified(user.isEmailVerified())
+                    .mfaEnabled(user.isMfaEnabled())
+                    .build();
+
             return AuthResponse.builder()
-                .accessToken(accessToken)
-                .refreshToken(refreshToken)
-                .tokenType("Bearer")
-                .expiresIn(jwtExpiration / 1000) // Convert to seconds
-                .user(userInfo)
+                    .accessToken(accessToken)
+                    .refreshToken(refreshToken)
+                    .tokenType("Bearer")
+                    .expiresIn(jwtExpiration / 1000) // Convert to seconds
+                    .user(userInfo)
                     .passwordResetRequired(false)
-                .build();
-                
+                    .build();
+
         } finally {
             TenantContext.clear();
         }
     }
-    
+
     /**
      * Register new user
      */
     public ApiResponse register(RegisterRequest request, String tenantId) {
         try {
             TenantContext.setCurrentTenant(tenantId);
-            
+
             // Check if username exists
             if (userRepository.existsByUsernameAndTenantId(request.getUsername(), tenantId)) {
                 throw new IllegalArgumentException("Username already exists");
             }
-            
+
             // Check if email exists
             if (userRepository.existsByEmailAndTenantId(request.getEmail(), tenantId)) {
                 throw new IllegalArgumentException("Email already exists");
             }
-            
+
             // Parse role
             User.UserRole role;
             try {
@@ -176,39 +183,39 @@ public class AuthenticationService {
             } catch (IllegalArgumentException e) {
                 throw new IllegalArgumentException("Invalid role: " + request.getRole());
             }
-            
+
             // Create user
             User user = User.builder()
-                .email(request.getEmail())
-                .password(passwordEncoder.encode(request.getPassword()))
-                .firstName(request.getFirstName())
-                .lastName(request.getLastName())
-                .phone(request.getPhone())
-                .role(role)
-                .status(User.UserStatus.PENDING)
-                .emailVerified(false)
-                .isActive(false)
-                .emailVerificationToken(generateToken())
-                .build();
-            
+                    .email(request.getEmail())
+                    .password(passwordEncoder.encode(request.getPassword()))
+                    .firstName(request.getFirstName())
+                    .lastName(request.getLastName())
+                    .phone(request.getPhone())
+                    .role(role)
+                    .status(User.UserStatus.PENDING)
+                    .emailVerified(false)
+                    .isActive(false)
+                    .emailVerificationToken(generateToken())
+                    .build();
+
             user.setTenantId(tenantId);
             User savedUser = userRepository.save(user);
-            
+
             // Send verification email
             emailService.sendEmailVerification(savedUser);
-            
+
             log.info("User registered successfully: {} in tenant: {}", savedUser.getEmail(), tenantId);
-            
+
             return ApiResponse.success(
-                "User registered successfully. Please check your email for verification.",
-                Map.of("id", savedUser.getId().toString())
+                    "User registered successfully. Please check your email for verification.",
+                    Map.of("id", savedUser.getId().toString())
             );
-            
+
         } finally {
             TenantContext.clear();
         }
     }
-    
+
     /**
      * Refresh access token using refresh token
      */
@@ -218,42 +225,46 @@ public class AuthenticationService {
             if (!jwtService.validateToken(refreshToken)) {
                 throw new BadCredentialsException("Invalid refresh token");
             }
-            
+
             String username = jwtService.extractUsername(refreshToken);
             String tenantId = jwtService.extractTenantId(refreshToken);
-            
+
             TenantContext.setCurrentTenant(tenantId);
-            
+
             User user = userRepository.findByUsernameAndTenantId(username, tenantId)
-                .orElseThrow(() -> new UsernameNotFoundException("User not found"));
-            
+                    .orElseThrow(() -> new UsernameNotFoundException("User not found"));
+
+            // Get student login required flag from tenant
+            Optional<Tenant> tenant = tenantRepository.findByIdentifier(tenantId);
+            Boolean studentLoginRequired = tenant.isPresent() ? tenant.get().getStudentLoginRequired() : false;
+
             // Generate new access token
-            String newAccessToken = jwtService.generateToken(user, tenantId, user.getRole().name());
-            
+            String newAccessToken = jwtService.generateToken(user, tenantId, user.getRole().name(), user.getUsername(), studentLoginRequired);
+
             UserInfo userInfo = UserInfo.builder()
-                .id(user.getId().toString())
-                .email(user.getEmail())
-                .firstName(user.getFirstName())
-                .lastName(user.getLastName())
-                .role(user.getRole().name())
-                .tenantId(tenantId)
-                .emailVerified(user.isEmailVerified())
-                .mfaEnabled(user.isMfaEnabled())
-                .build();
-            
+                    .id(user.getId().toString())
+                    .email(user.getEmail())
+                    .firstName(user.getFirstName())
+                    .lastName(user.getLastName())
+                    .role(user.getRole().name())
+                    .tenantId(tenantId)
+                    .emailVerified(user.isEmailVerified())
+                    .mfaEnabled(user.isMfaEnabled())
+                    .build();
+
             return AuthResponse.builder()
-                .accessToken(newAccessToken)
-                .refreshToken(refreshToken) // Return same refresh token
-                .tokenType("Bearer")
-                .expiresIn(jwtExpiration / 1000)
-                .user(userInfo)
-                .build();
-                
+                    .accessToken(newAccessToken)
+                    .refreshToken(refreshToken) // Return same refresh token
+                    .tokenType("Bearer")
+                    .expiresIn(jwtExpiration / 1000)
+                    .user(userInfo)
+                    .build();
+
         } finally {
             TenantContext.clear();
         }
     }
-    
+
     /**
      * Logout user and blacklist token
      */
@@ -262,10 +273,10 @@ public class AuthenticationService {
         if (token != null && token.startsWith("Bearer ")) {
             token = token.substring(7);
         }
-        
+
         // Add token to blacklist
         tokenBlacklistService.blacklistToken(token);
-        
+
         log.info("User logged out: {}", username);
     }
 
@@ -276,41 +287,67 @@ public class AuthenticationService {
     public void firstTimePasswordChange(FirstTimePasswordChange request) {
         log.info("Password reset confirmation attempt for username {}", request.getUsername());
 
+<<<<<<< Updated upstream
         userRepository.findByUsernameOrEmail(request.getUsername())
                 .ifPresent(user -> {
                     try {
                         // Set current tenant for multi-tenant handling
                         TenantContext.setCurrentTenant(user.getTenantId());
+=======
+        User user = userRepository.findByUsernameOrEmail(request.getUsername())
+                .orElseThrow(() -> new UsernameNotFoundException(
+                        "User not found with username or email: " + request.getUsername()
+                ));
+        try {
+            // Set current tenant for multi-tenant handling
+            TenantContext.setCurrentTenant(user.getTenantId());
+>>>>>>> Stashed changes
 
-                        // 1. Validate if user requires initial reset
-                        if (user.isTemporaryPassword()) {
-                            throw new PasswordChangeException("Initial reset not required");
-                        }
+            // 1. Validate if user requires initial reset
+            if (user.isTemporaryPassword()) {
+                throw new PasswordChangeException("Initial reset not required");
+            }
 
+<<<<<<< Updated upstream
                         // 2. Validate current password
                         if (!passwordEncoder.matches(request.getCurrentPassword(), user.getPassword())) {
                             throw new PasswordChangeException("Invalid current password");
                         }
+=======
+            // 2. Validate current password
+            if (!passwordEncoder.matches(request.getCurrentPassword(), user.getPassword())) {
+                throw new PasswordChangeException("Invalid current password");
 
-                        // 3. Encode new password
-                        String encodedNewPassword = passwordEncoder.encode(request.getNewPassword());
+            }
+>>>>>>> Stashed changes
 
-                        // 4. Update password + flags in DB
-                        int updated = userRepository.setInitialPasswordReset(user.getId(), encodedNewPassword, LocalDateTime.now());
-                        log.info("Password update result = {}", updated);
+            // 3. Encode new password
+            String encodedNewPassword = passwordEncoder.encode(request.getNewPassword());
 
-                        if (updated == 0) {
-                            throw new PasswordChangeException("Password update failed, no row updated!");
-                        }
+            // 4. Update password + flags in DB
+            int updated = userRepository.setInitialPasswordReset(user.getId(), encodedNewPassword, LocalDateTime.now());
+            log.info("Password update result = {}", updated);
 
-                        // Optionally, send confirmation email
-                        emailService.sendPasswordChangeConfirmation(user);
+            if (updated == 0) {
+                throw new PasswordChangeException("Password update failed, no row updated!");
+            }
 
+            // Optionally, send confirmation email
+            emailService.sendPasswordChangeConfirmation(user);
+
+<<<<<<< Updated upstream
                     } finally {
                         // Always clear tenant context to prevent memory leaks
                         TenantContext.clear();
                     }
                 });
+=======
+        } finally {
+            // Always clear tenant context to prevent memory leaks
+            TenantContext.clear();
+        }
+
+>>>>>>> Stashed changes
     }
 
     /**
@@ -336,6 +373,8 @@ public class AuthenticationService {
             });
         // Don't reveal if email exists or not
     }
+
+
     
     /**
      * Reset password with token

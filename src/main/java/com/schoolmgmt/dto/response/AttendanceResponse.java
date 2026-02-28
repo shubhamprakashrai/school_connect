@@ -8,6 +8,7 @@ import lombok.NoArgsConstructor;
 
 import java.time.LocalDate;
 import java.time.LocalTime;
+import java.util.UUID;
 
 @Data
 @Builder
@@ -17,11 +18,18 @@ import java.time.LocalTime;
 public class AttendanceResponse {
 
     private String id;
-    private String studentId;
+    private UUID studentId;
     private String studentName;
     private String rollNumber;
     private String classId;
     private String sectionId;
+    
+    // Teacher-specific fields
+    private UUID teacherId;
+    private String teacherName;
+    private String employeeId;
+    private String department;
+    
     private LocalDate attendanceDate;
     private String status;
     private String session;

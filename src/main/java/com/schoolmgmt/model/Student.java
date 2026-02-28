@@ -6,49 +6,52 @@ import lombok.*;
 import java.time.LocalDate;
 import java.util.HashSet;
 import java.util.Set;
-import java.util.UUID;
 
 /**
  * Student entity representing a student in the school system.
  */
 @Entity
 @Table(name = "students",
-       indexes = {
-           @Index(name = "idx_student_roll_class", columnList = "roll_number, current_class_id, tenant_id", unique = true),
-           @Index(name = "idx_student_email", columnList = "email, tenant_id"),
-           @Index(name = "idx_student_status", columnList = "status"),
-           @Index(name = "idx_student_class", columnList = "current_class_id"),
-           @Index(name = "idx_student_section", columnList = "current_section_id")
-       })
+        indexes = {
+                @Index(name = "idx_student_roll_class", columnList = "roll_number, current_class_id, tenant_id", unique = true),
+                @Index(name = "idx_student_email", columnList = "email, tenant_id"),
+                @Index(name = "idx_student_status", columnList = "status"),
+                @Index(name = "idx_student_class", columnList = "current_class_id"),
+                @Index(name = "idx_student_section", columnList = "current_section_id")
+        })
 @Data
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-@EqualsAndHashCode(callSuper = true)
-@ToString(exclude = {"user", "parents", "guardians"})
+@EqualsAndHashCode(callSuper = true, onlyExplicitlyIncluded = true)
+@ToString(callSuper = true, onlyExplicitlyIncluded = true)
 public class Student extends BaseEntity {
 
+    @EqualsAndHashCode.Include
+    @ToString.Include
     @Column(name = "roll_number", nullable = false, length = 20)
     private String rollNumber; // Roll number within class
 
     // Personal Information
+    @ToString.Include
     @Column(name = "first_name", nullable = false, length = 100)
     private String firstName;
 
+    @ToString.Include
     @Column(name = "middle_name", length = 100)
     private String middleName;
 
+    @ToString.Include
     @Column(name = "last_name", nullable = false, length = 100)
     private String lastName;
 
+    @ToString.Include
     @Column(name = "date_of_birth", nullable = false)
     private LocalDate dateOfBirth;
 
     @Enumerated(EnumType.STRING)
     @Column(name = "gender", nullable = false, length = 10)
     private Gender gender;
-
-
 
     @Column(name = "nationality", length = 50)
     private String nationality;
@@ -63,9 +66,11 @@ public class Student extends BaseEntity {
     private String category; // General, OBC, SC, ST, etc.
 
     // Contact Information
+    @ToString.Include
     @Column(name = "email", length = 100)
     private String email;
 
+    @ToString.Include
     @Column(name = "phone", length = 20)
     private String phone;
 
@@ -87,12 +92,15 @@ public class Student extends BaseEntity {
     @Column(name = "postal_code", length = 20)
     private String postalCode;
 
-    // Academic Information
-    @Column(name = "current_class_id")
-    private String currentClassId;
+    @ManyToOne
+    @JoinColumn(name = "schoolClass", nullable = false)
+    @ToString.Include
+    private SchoolClass schoolClass;
 
-    @Column(name = "current_section_id")
-    private java.util.UUID currentSectionId;
+    @ManyToOne
+    @JoinColumn(name = "section", nullable = false)
+    @ToString.Include
+    private Section section;
 
     @Column(name = "admission_date", nullable = false)
     private LocalDate admissionDate;
@@ -102,8 +110,6 @@ public class Student extends BaseEntity {
 
     @Column(name = "previous_school", length = 200)
     private String previousSchool;
-
-
 
     @Enumerated(EnumType.STRING)
     @Column(name = "status", nullable = false, length = 20)
@@ -164,8 +170,6 @@ public class Student extends BaseEntity {
     @Column(name = "emergency_contact_phone", nullable = false, length = 20)
     private String emergencyContactPhone;
 
-
-
     // Documents
     @Column(name = "photo_url", length = 500)
     private String photoUrl;
@@ -179,30 +183,34 @@ public class Student extends BaseEntity {
     @Column(name = "documents", columnDefinition = "TEXT")
     private String documents; // JSON array of document URLs
 
-
-
     // System User Link
     @OneToOne
     @JoinColumn(name = "user_id", unique = true)
+    @ToString.Exclude
+    @EqualsAndHashCode.Exclude
     private User user; // Link to user account for login
 
     // Relationships
     @ManyToMany(fetch = FetchType.LAZY)
     @JoinTable(
-        name = "student_parents",
-        joinColumns = @JoinColumn(name = "student_id"),
-        inverseJoinColumns = @JoinColumn(name = "parent_id")
+            name = "student_parents",
+            joinColumns = @JoinColumn(name = "student_id"),
+            inverseJoinColumns = @JoinColumn(name = "parent_id")
     )
     @Builder.Default
+    @ToString.Exclude
+    @EqualsAndHashCode.Exclude
     private Set<Parent> parents = new HashSet<>();
 
     @ManyToMany(fetch = FetchType.LAZY)
     @JoinTable(
-        name = "student_guardians",
-        joinColumns = @JoinColumn(name = "student_id"),
-        inverseJoinColumns = @JoinColumn(name = "guardian_id")
+            name = "student_guardians",
+            joinColumns = @JoinColumn(name = "student_id"),
+            inverseJoinColumns = @JoinColumn(name = "guardian_id")
     )
     @Builder.Default
+    @ToString.Exclude
+    @EqualsAndHashCode.Exclude
     private Set<Parent> guardians = new HashSet<>();
 
     // Metadata
@@ -220,25 +228,28 @@ public class Student extends BaseEntity {
 
     // Business Methods
     public String getFullName() {
-        StringBuilder name = new StringBuilder(firstName);
-        if (middleName != null && !middleName.isEmpty()) {
-            name.append(" ").append(middleName);
+        StringBuilder name = new StringBuilder();
+
+        if (firstName != null && !firstName.isEmpty()) {
+            name.append(firstName);
         }
-        name.append(" ").append(lastName);
+
+        if (middleName != null && !middleName.isEmpty()) {
+            if (!name.isEmpty()) name.append(" ");
+            name.append(middleName);
+        }
+
+        if (lastName != null && !lastName.isEmpty()) {
+            if (!name.isEmpty()) name.append(" ");
+            name.append(lastName);
+        }
+
         return name.toString();
     }
-
-
 
     public boolean isActive() {
         return status == StudentStatus.ACTIVE;
     }
-
-    public java.util.UUID getSectionId() {
-        return currentSectionId;
-    }
-
-
 
     // Enums
     public enum Gender {

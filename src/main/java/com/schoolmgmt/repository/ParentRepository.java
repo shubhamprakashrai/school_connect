@@ -65,6 +65,24 @@ public interface ParentRepository extends JpaRepository<Parent, UUID>, JpaSpecif
      */
     boolean existsByPhoneAndTenantId(String phone, String tenantId);
 
+
+    // ... all your existing methods remain exactly the same ...
+
+    /**
+     * Find parent by ID with both children and wards eagerly loaded
+     */
+    @Query("SELECT DISTINCT p FROM Parent p " +
+            "LEFT JOIN FETCH p.children " +
+            "LEFT JOIN FETCH p.wards " +
+            "WHERE p.id = :id")
+    Optional<Parent> findByIdWithAllStudents(@Param("id") UUID id);
+
+    /**
+     * Find parent by ID with children eagerly loaded
+     */
+    @Query("SELECT p FROM Parent p LEFT JOIN FETCH p.children WHERE p.id = :id")
+    Optional<Parent> findByIdWithChildren(@Param("id") UUID id);
+
     /**
      * Search parents by name
      */
@@ -174,4 +192,13 @@ public interface ParentRepository extends JpaRepository<Parent, UUID>, JpaSpecif
     @Query("UPDATE Parent p SET p.isPrimaryContact = CASE WHEN p.id = :parentId THEN true ELSE false END " +
            "WHERE p IN (SELECT p2 FROM Parent p2 JOIN p2.children s WHERE s.id = :studentId)")
     void updatePrimaryContactForStudent(@Param("parentId") UUID parentId, @Param("studentId") UUID studentId);
+
+
+//    Optional<Parent> findByEmailAndTenantId(String email, String tenantId);
+
+    List<Parent> findAllByTenantId(String tenantId);
+
+
+
+
 }

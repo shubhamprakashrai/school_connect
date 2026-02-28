@@ -20,6 +20,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.List;
 import java.util.UUID;
 
 /**
@@ -39,7 +40,7 @@ public class StudentController {
     @Operation(summary = "Create new student", description = "Register a new student in the system")
     @PreAuthorize("hasAnyRole('ADMIN', 'SUPER_ADMIN')")
     public ResponseEntity<StudentResponse> createStudent(@Valid @RequestBody CreateStudentRequest request) {
-        log.info("Creating new student: {} {}", request.getFirstName(), request.getLastName());
+        log.info("Creating new student: {} {}", request.getUserRequest().getFirstName(), request.getUserRequest().getLastName());
         StudentResponse response = studentService.createStudent(request);
         return ResponseEntity.status(HttpStatus.CREATED).body(response);
     }
@@ -120,6 +121,15 @@ public class StudentController {
                 .build();
         
         Page<StudentResponse> students = studentService.getAllStudents(filter, pageable);
+        return ResponseEntity.ok(students);
+    }
+
+    @GetMapping("/section/{sectionId}")
+    @Operation(summary = "Get students by section", description = "Get all students in a specific section")
+    @PreAuthorize("hasAnyRole('ADMIN', 'SUPER_ADMIN', 'TEACHER')")
+    public ResponseEntity<List<StudentResponse>> getStudentsBySection(@PathVariable UUID sectionId) {
+        log.info("Fetching students for section: {}", sectionId);
+        List<StudentResponse> students = studentService.getStudentsBySection(sectionId);
         return ResponseEntity.ok(students);
     }
 

@@ -44,6 +44,7 @@ public class SchoolClass extends BaseEntity {
     /**
      * The sections that belong to this class.
      */
+<<<<<<< Updated upstream
     @OneToMany(mappedBy = "schoolClass", cascade = CascadeType.ALL, orphanRemoval = true)
     @Builder.Default
     private Set<Section> sections = new HashSet<>();
@@ -60,3 +61,8 @@ public class SchoolClass extends BaseEntity {
     @Builder.Default
     private Set<Subject> subjects = new HashSet<>();
 }
+=======
+    @OneToMany(mappedBy = "schoolClass", fetch = FetchType.LAZY, cascade = CascadeType.ALL)
+    private Set<Section> sections = new HashSet<>(); // <-- initialize here
+}
+>>>>>>> Stashed changes

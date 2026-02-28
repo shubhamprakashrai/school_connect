@@ -42,6 +42,29 @@ public interface TeacherRepository extends JpaRepository<Teacher, UUID>, JpaSpec
     Page<Teacher> findByTenantId(String tenantId, Pageable pageable);
 
     /**
+     * Find teachers by status and tenant
+     */
+    @Query("SELECT t FROM Teacher t WHERE t.status = :status AND t.tenantId = :tenantId")
+    Page<Teacher> findByStatusAndTenantId(@Param("status") Teacher.TeacherStatus status, @Param("tenantId") String tenantId, Pageable pageable);
+
+    /**
+     * Find teachers by department and tenant
+     */
+    @Query("SELECT t FROM Teacher t WHERE t.department = :department AND t.tenantId = :tenantId")
+    Page<Teacher> findByDepartmentAndTenantId(@Param("department") String department, @Param("tenantId") String tenantId, Pageable pageable);
+
+    /**
+     * Find teachers by status, department and tenant
+     */
+    @Query("SELECT t FROM Teacher t WHERE t.status = :status AND t.department = :department AND t.tenantId = :tenantId")
+    Page<Teacher> findByStatusAndDepartmentAndTenantId(@Param("status") Teacher.TeacherStatus status, @Param("department") String department, @Param("tenantId") String tenantId, Pageable pageable);
+
+    /**
+     * Find teacher by ID and tenant
+     */
+    Optional<Teacher> findByIdAndTenantId(UUID id, String tenantId);
+
+    /**
      * Find teachers by department and tenant
      */
     List<Teacher> findByDepartmentAndTenantId(String department, String tenantId);

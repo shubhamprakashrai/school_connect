@@ -9,6 +9,8 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+import java.util.UUID;
+
 @Data
 @Builder
 @NoArgsConstructor
@@ -30,4 +32,12 @@ public class ParentInfo {
     @Email
     @Schema(description = "Email address", example = "parent@example.com")
     private String email;
+
+
+    @Schema(description = "Parent Type", example = "Mother , Pather ")
+    private String parentType ;
+
+
+    @Schema(description = "Parent Type", example = "Mother , Pather ")
+    private UUID Id ;
 }

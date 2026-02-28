@@ -1,0 +1,47 @@
+package com.schoolmgmt.dto.request;
+
+import com.schoolmgmt.model.StudentAttendance;
+import io.swagger.v3.oas.annotations.media.Schema;
+import jakarta.validation.constraints.NotNull;
+import lombok.Data;
+
+import java.time.LocalDate;
+import java.util.List;
+import java.util.UUID;
+
+/**
+ * DTO for marking attendance for a single student.
+ */
+@Data
+@Schema(description = "Single student attendance marking request")
+public class StudentAttendanceRequest {
+
+    @NotNull(message = "Student ID is required")
+    @Schema(description = "Student ID", example = "550e8400-e29b-41d4-a716-446655440000")
+    private UUID studentId;
+
+    @NotNull(message = "Attendance date is required")
+    @Schema(description = "Attendance date", example = "2025-01-15")
+    private LocalDate attendanceDate;
+
+    @NotNull(message = "Section ID is required")
+    @Schema(description = "Section ID", example = "550e8400-e29b-41d4-a716-446655440001")
+    private UUID sectionId;
+
+    @NotNull(message = "Academic year ID is required")
+    @Schema(description = "Academic year ID", example = "550e8400-e29b-41d4-a716-446655440002")
+    private UUID academicYearId;
+
+    @NotNull(message = "Attendance status is required")
+    @Schema(description = "Attendance status", example = "PRESENT", allowableValues = {"PRESENT", "ABSENT", "LATE", "LEAVE", "HALF_DAY", "EXCUSED"})
+    private StudentAttendance.AttendanceStatus status;
+
+    @Schema(description = "Remarks/Reason", example = "Medical leave - fever")
+    private String remarks;
+
+    @Schema(description = "Is half day attendance", example = "false")
+    private Boolean isHalfDay;
+
+    @Schema(description = "Half day type (if applicable)", example = "MORNING", allowableValues = {"MORNING", "AFTERNOON"})
+    private StudentAttendance.HalfDayType halfDayType;
+}

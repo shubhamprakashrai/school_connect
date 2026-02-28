@@ -1,7 +1,7 @@
 package com.schoolmgmt.service;
 
 import com.schoolmgmt.dto.common.AdminInfo;
-import com.schoolmgmt.dto.common.AdminUserRequest;
+import com.schoolmgmt.dto.common.UserRequest;
 import com.schoolmgmt.dto.common.TenantInfo;
 import com.schoolmgmt.dto.common.TenantLimits;
 import com.schoolmgmt.dto.request.TenantRegistrationRequest;
@@ -43,8 +43,9 @@ public class TenantService implements TenantServiceInterface {
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
     private final EmailService emailService;
+    private final UserService userService;
 
-    String adminUserid;
+    String userRequestid;
 
     @Value("${app.frontend.url:http://localhost:3000}")
     private String frontendUrl;
@@ -79,7 +80,7 @@ public class TenantService implements TenantServiceInterface {
 
         String schemaName = "school_" + request.getSubdomain().toLowerCase().replace("-", "_");
 
-     // String tempPassowordForFirstTime= request.getAdminUser().getPassword();
+     // String tempPassowordForFirstTime= request.getuserRequest().getPassword();
 
         Tenant tenant = Tenant.builder()
                 .identifier(tenantIdentifier)
@@ -96,6 +97,7 @@ public class TenantService implements TenantServiceInterface {
                 .website(request.getWebsite())
                 .status(Tenant.TenantStatus.PENDING)
                 .subscriptionPlan(Tenant.SubscriptionPlan.valueOf(request.getSubscriptionPlan()))
+                .studentLoginRequired(request.getStudentLoginRequired() != null ? request.getStudentLoginRequired() : false)
                 .createdBy("SYSTEM")
                 .build();
 
@@ -108,8 +110,10 @@ public class TenantService implements TenantServiceInterface {
         Tenant savedTenant = tenantRepository.save(tenant);
         log.info("Tenant created: {} with identifier: {}", savedTenant.getName(), savedTenant.getIdentifier());
 
-        User adminUser = createAdminUser(request.getAdminUser(), savedTenant.getIdentifier());
-        log.info("Admin user created: {} for tenant: {}", adminUser.getUsername(), savedTenant.getIdentifier());
+
+        // user account creation
+        User userRequest = userService.createUser("ADMIN", request.getUserRequest(), savedTenant.getIdentifier());
+        log.info("Admin user created: {} for tenant: {}", userRequest.getUsername(), savedTenant.getIdentifier());
 
         initializeTenantData(savedTenant);
 
@@ -117,7 +121,6 @@ public class TenantService implements TenantServiceInterface {
             activateTenant(savedTenant.getId());
         }
 
-        sendWelcomeEmail(savedTenant, adminUser);
 
         String accessUrl = frontendUrl + "/login?tenant=" + savedTenant.getSubdomain();
         String[] nextSteps = {
@@ -141,12 +144,12 @@ public class TenantService implements TenantServiceInterface {
                 .build();
 
         AdminInfo adminInfo = AdminInfo.builder()
-                .id(adminUser.getId().toString())
-                .userId(adminUserid)
-                .username(adminUser.getUsername())
-                .email(adminUser.getEmail())
-                .firstName(adminUser.getFirstName())
-                .lastName(adminUser.getLastName())
+                .id(userRequest.getId().toString())
+                .userId(userRequestid)
+                .username(userRequest.getUsername())
+                .email(userRequest.getEmail())
+                .firstName(userRequest.getFirstName())
+                .lastName(userRequest.getLastName())
                 .isTemporaryPassword(false)
                 .build();
 
@@ -312,51 +315,51 @@ public class TenantService implements TenantServiceInterface {
         }
     }
 
-    private User createAdminUser(AdminUserRequest request, String tenantIdentifier) {
-        if (userRepository.existsByUsernameAndTenantId(request.getUsername(), tenantIdentifier)) {
-            throw new BusinessException("Username already exists: " + request.getUsername());
-        }
-        String tenantPrefix=tenantIdentifier;
-        // Fetch max sequence for this tenant from DB (service layer)
-        Integer lastSequence = userRepository.findMaxSequenceForTenant(tenantPrefix);
-        if (lastSequence == null) {
-            lastSequence = 0; // first user
-        }
-
-        if (userRepository.existsByPhone(request.getPhone())) {
-            throw new BusinessException("Phone number  already exists: " + request.getPhone());
-        }
-
-        if (userRepository.existsByEmail(request.getEmail())) {
-            throw new BusinessException("Email already registered: " + request.getEmail());
-        }
-
-
-        // Generate user code using util with configurable integer length
-
-         adminUserid = UserIdGeneratorBasedonTenantIdentifies.generateNextCode(tenantPrefix, lastSequence, 5);
-
-
-        User adminUser = User.builder()
-                .userId(adminUserid)
-                .username(adminUserid+request.getUsername())
-                .email(request.getEmail())
-                .password(passwordEncoder.encode(request.getPassword()))
-                .firstName(request.getFirstName())
-                .lastName(request.getLastName())
-                .phone(request.getPhone())
-                .role(User.UserRole.ADMIN)
-                .status(User.UserStatus.ACTIVE)
-                .emailVerified(true)
-                .isActive(true)
-                .tempPasswordForFirstTime(request.getPassword())
-                .build();
-
-        adminUser.setTenantId(tenantIdentifier);
-        adminUser.setCreatedBy("SYSTEM");
-
-        return userRepository.save(adminUser);
-    }
+//    private User createuserRequest(UserRequest request, String tenantIdentifier) {
+//        if (userRepository.existsByUsernameAndTenantId(request.getUsername(), tenantIdentifier)) {
+//            throw new BusinessException("Username already exists: " + request.getUsername());
+//        }
+//        String tenantPrefix=tenantIdentifier;
+//        // Fetch max sequence for this tenant from DB (service layer)
+//        Integer lastSequence = userRepository.findMaxSequenceForTenant(tenantPrefix);
+//        if (lastSequence == null) {
+//            lastSequence = 0; // first user
+//        }
+//
+//        if (userRepository.existsByPhone(request.getPhone())) {
+//            throw new BusinessException("Phone number  already exists: " + request.getPhone());
+//        }
+//
+//        if (userRepository.existsByEmail(request.getEmail())) {
+//            throw new BusinessException("Email already registered: " + request.getEmail());
+//        }
+//
+//
+//        // Generate user code using util with configurable integer length
+//
+//         userRequestid = UserIdGeneratorBasedonTenantIdentifies.generateNextCode(tenantPrefix, lastSequence, 5);
+//
+//
+//        User userRequest = User.builder()
+//                .userId(userRequestid)
+//                .username(userRequestid+request.getUsername())
+//                .email(request.getEmail())
+//                .password(passwordEncoder.encode(request.getPassword()))
+//                .firstName(request.getFirstName())
+//                .lastName(request.getLastName())
+//                .phone(request.getPhone())
+//                .role(User.UserRole.ADMIN)
+//                .status(User.UserStatus.ACTIVE)
+//                .emailVerified(true)
+//                .isActive(true)
+//                .tempPasswordForFirstTime(request.getPassword())
+//                .build();
+//
+//        userRequest.setTenantId(tenantIdentifier);
+//        userRequest.setCreatedBy("SYSTEM");
+//
+//        return userRepository.save(userRequest);
+//    }
 
     private void initializeTenantData(Tenant tenant) {
         try {
@@ -367,17 +370,17 @@ public class TenantService implements TenantServiceInterface {
         }
     }
 
-    private void sendWelcomeEmail(Tenant tenant, User adminUser) {
+    private void sendWelcomeEmail(Tenant tenant, User userRequest) {
         String subject = "Welcome to " + appName + " - Your School is Ready!";
         String loginUrl = frontendUrl + "/login?tenant=" + tenant.getSubdomain();
-        String password = adminUser.getPassword();
+        String password = userRequest.getPassword();
 //        String emailContent = String.format(
 //                "Dear %s,\n\n" +
 //                        "Welcome to %s! Your school '%s' has been successfully registered.\n\n" +
 //                        "Login Details:\nURL: %s\nUsername: %s\nTenant: %s\n\n" +
 //                        "Please login and complete your school setup.\n\nBest regards,\n%s Team",
-//                adminUser.getFullName(), appName, tenant.getName(), loginUrl,
-//                adminUser.getUsername(), tenant.getSubdomain(), appName
+//                userRequest.getFullName(), appName, tenant.getName(), loginUrl,
+//                userRequest.getUsername(), tenant.getSubdomain(), appName
 //        );
         String emailContent = String.format(
                 "Dear %s,\n\n" +
@@ -390,18 +393,18 @@ public class TenantService implements TenantServiceInterface {
                         "Tenant: %s\n\n" +
                         "Please login and complete your school setup.\n\n" +
                         "Best regards,\n%s Team",
-                adminUser.getFullName(),      // Dear %s
+                userRequest.getFullName(),      // Dear %s
                 appName,                      // Welcome to %s
                 tenant.getName(),             // Your school '%s'
                 loginUrl,                     // URL: %s
-                adminUser.getUsername(),      // Username: %s
-                adminUser.getUserId(),       // User ID: %s
-                adminUser.getTempPasswordForFirstTime(),        // Password: %s (temporary system password)
+                userRequest.getUsername(),      // Username: %s
+                userRequest.getUserId(),       // User ID: %s
+                userRequest.getTempPasswordForFirstTime(),        // Password: %s (temporary system password)
                 tenant.getSubdomain(),        // Tenant: %s
                 appName                       // Best regards, %s Team
         );
 
-        emailService.sendSimpleEmail(adminUser.getEmail(), subject, emailContent);
+        emailService.sendSimpleEmail(userRequest.getEmail(), subject, emailContent);
     }
 
     private String convertMapToJson(Map<String, String> map) {

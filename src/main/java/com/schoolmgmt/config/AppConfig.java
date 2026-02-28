@@ -1,6 +1,7 @@
 package com.schoolmgmt.config;
 
 import com.schoolmgmt.security.CustomUserDetailsService;
+import org.modelmapper.ModelMapper;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.mail.javamail.JavaMailSender;
@@ -102,5 +103,11 @@ public class AppConfig {
     public static void main(String[] args) {
         BCryptPasswordEncoder bCryptPasswordEncoder = new BCryptPasswordEncoder();
         System.out.println(bCryptPasswordEncoder.matches("admin123","$2a$10$39tS8VvpHzStTwy8eDb3peD..VpFJRLgSJZ2wi/X3V22AeDQPxjye"));
+    }
+
+
+    @Bean
+    public ModelMapper modelMapper() {
+        return new ModelMapper();
     }
 }

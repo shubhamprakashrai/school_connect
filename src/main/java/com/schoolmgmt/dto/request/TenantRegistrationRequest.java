@@ -1,6 +1,7 @@
 package com.schoolmgmt.dto.request;
 
 import com.schoolmgmt.dto.common.AdminUserRequest;
+import com.schoolmgmt.dto.common.UserRequest;
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.*;
 import lombok.AllArgsConstructor;
@@ -69,8 +70,11 @@ public class TenantRegistrationRequest {
     
     @NotNull(message = "Admin user details are required")
     @Schema(description = "Admin user details for the school")
-    private AdminUserRequest adminUser;
-    
+    private UserRequest userRequest;
+
+//    @Schema(description = "Initial admin user details for the tenant")
+//    private AdminUserRequest adminUser;
+
     @Schema(description = "Additional configuration settings")
     private Map<String, String> configuration;
     
@@ -80,4 +84,8 @@ public class TenantRegistrationRequest {
     
     @Schema(description = "Initial classes and sections to create for the tenant")
     private List<CreateSchoolClassRequest> initialClasses;
+    
+    @Schema(description = "Whether student login is required for this tenant", 
+            example = "true", defaultValue = "false")
+    private Boolean studentLoginRequired = false;
 }

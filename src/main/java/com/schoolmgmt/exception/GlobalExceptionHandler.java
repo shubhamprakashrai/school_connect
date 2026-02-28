@@ -1,12 +1,14 @@
 package com.schoolmgmt.exception;
 
 import com.schoolmgmt.dto.ApiResponse;
+import org.springframework.dao.DataIntegrityViolationException;
 import jakarta.persistence.EntityNotFoundException;
 import jakarta.validation.ConstraintViolation;
 import jakarta.validation.ConstraintViolationException;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.authentication.DisabledException;
@@ -15,6 +17,7 @@ import org.springframework.security.core.AuthenticationException;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.validation.FieldError;
 import org.springframework.web.bind.MethodArgumentNotValidException;
+import org.springframework.web.bind.MissingServletRequestParameterException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.context.request.WebRequest;
@@ -34,6 +37,42 @@ import java.util.Map;
 @Slf4j
 public class GlobalExceptionHandler {
 
+    /**
+     * Handle HTTP message not readable exceptions (missing/malformed request body)
+     */
+    @ExceptionHandler(HttpMessageNotReadableException.class)
+    public ResponseEntity<ApiResponse> handleHttpMessageNotReadable(HttpMessageNotReadableException ex) {
+        String errorMessage = "Request body is missing or malformed";
+        
+        // Check for specific JSON parsing errors
+        if (ex.getMessage() != null) {
+            if (ex.getMessage().contains("Required request body is missing")) {
+                errorMessage = "Request body is required";
+            } else if (ex.getMessage().contains("JSON parse error")) {
+                errorMessage = "Invalid JSON format in request body";
+            } else if (ex.getMessage().contains("Unrecognized field")) {
+                errorMessage = "Invalid field in request body: " + ex.getMessage();
+            }
+        }
+        
+        log.warn("HTTP message not readable: {} - {}", errorMessage, ex.getMessage());
+        
+        return ResponseEntity.badRequest()
+            .body(ApiResponse.error(errorMessage));
+    }
+    
+    /**
+     * Handle missing servlet request parameter exceptions
+     */
+    @ExceptionHandler(MissingServletRequestParameterException.class)
+    public ResponseEntity<ApiResponse> handleMissingServletRequestParameter(MissingServletRequestParameterException ex) {
+        String errorMessage = String.format("Required parameter '%s' is missing", ex.getParameterName());
+        log.warn("Missing request parameter: {}", errorMessage);
+        
+        return ResponseEntity.badRequest()
+            .body(ApiResponse.error(errorMessage));
+    }
+    
     /**
      * Handle validation errors
      */
@@ -141,6 +180,39 @@ public class GlobalExceptionHandler {
     }
     
     /**
+     * Handle database constraint violations
+     */
+    @ExceptionHandler(DataIntegrityViolationException.class)
+    public ResponseEntity<ApiResponse> handleDataIntegrityViolation(DataIntegrityViolationException ex) {
+        String errorMessage = ex.getMessage();
+        String userFriendlyMessage = "Database constraint violation";
+        
+        // Parse common constraint violations for better error messages
+        if (errorMessage.contains("duplicate key")) {
+            if (errorMessage.contains("code")) {
+                userFriendlyMessage = "Subject with this code already exists in this school";
+            } else if (errorMessage.contains("email")) {
+                userFriendlyMessage = "Email already exists in this school";
+            } else if (errorMessage.contains("phone")) {
+                userFriendlyMessage = "Phone number already exists in this school";
+            } else if (errorMessage.contains("roll_number")) {
+                userFriendlyMessage = "Roll number already exists in this class";
+            } else {
+                userFriendlyMessage = "Record already exists in this school";
+            }
+        } else if (errorMessage.contains("violates not-null constraint")) {
+            userFriendlyMessage = "Required field is missing";
+        } else if (errorMessage.contains("violates foreign key constraint")) {
+            userFriendlyMessage = "Referenced record does not exist";
+        }
+        
+        log.warn("Database constraint violation: {} -> {}", errorMessage, userFriendlyMessage);
+        
+        return ResponseEntity.status(HttpStatus.CONFLICT)
+                .body(ApiResponse.error(userFriendlyMessage));
+    }
+    
+    /**
      * Handle business logic exceptions
      */
     @ExceptionHandler(BusinessException.class)
@@ -213,24 +285,22 @@ public class GlobalExceptionHandler {
         return ResponseEntity.status(HttpStatus.NOT_FOUND)
             .body(ApiResponse.error(error));
     }
-    
+
     /**
-     * Handle all other exceptions
+     * Handle all other exceptions — FINAL fallback
      */
     @ExceptionHandler(Exception.class)
     public ResponseEntity<ApiResponse> handleGlobalException(Exception ex, WebRequest request) {
         log.error("Unexpected error occurred", ex);
-        
-        // In production, don't expose internal error details
+
         String message = "An unexpected error occurred. Please try again later.";
-        
-        // In development, include more details
+
         if (isDevEnvironment()) {
             message = ex.getMessage();
         }
-        
+
         return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-            .body(ApiResponse.error(message));
+                .body(ApiResponse.error(message));
     }
     
     private boolean isDevEnvironment() {
@@ -248,11 +318,15 @@ public class GlobalExceptionHandler {
                 .body(ApiResponse.error(ex.getMessage()));
     }
 
-    @ExceptionHandler(RuntimeException.class)
-    public ResponseEntity<ApiResponse> handleRuntimeException(RuntimeException ex){
-        log.error("Illegal state: {}", ex.getMessage());
-        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+
+
+    /**
+     * Handle duplicate resource exceptions
+     */
+    @ExceptionHandler(DuplicateResourceException.class)
+    public ResponseEntity<ApiResponse> handleDuplicateResource(DuplicateResourceException ex) {
+        log.warn("Duplicate resource: {}", ex.getMessage());
+        return ResponseEntity.status(HttpStatus.CONFLICT)
                 .body(ApiResponse.error(ex.getMessage()));
     }
-
 }

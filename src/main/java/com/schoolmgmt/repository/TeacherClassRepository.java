@@ -95,8 +95,26 @@ public interface TeacherClassRepository extends JpaRepository<TeacherClass, UUID
     // Class teacher functionality not implemented in this entity
 
     /**
-     * Find assignments that need to be renewed (for academic year transition)
+     * Count unique subjects taught by a teacher
      */
-    @Query("SELECT tc FROM TeacherClass tc WHERE tc.academicYearId = :oldAcademicYearId AND tc.isActive = true AND tc.tenantId = :tenantId")
-    List<TeacherClass> findAssignmentsForAcademicYearTransition(@Param("oldAcademicYearId") UUID oldAcademicYearId, @Param("tenantId") String tenantId);
+    @Query("SELECT COUNT(DISTINCT tc.subjectId) FROM TeacherClass tc WHERE tc.teacherId = :teacherId AND tc.isActive = true AND tc.tenantId = :tenantId")
+    long countDistinctSubjectsByTeacherId(@Param("teacherId") UUID teacherId, @Param("tenantId") String tenantId);
+
+    /**
+     * Get all unique subject IDs taught by a teacher
+     */
+    @Query("SELECT DISTINCT tc.subjectId FROM TeacherClass tc WHERE tc.teacherId = :teacherId AND tc.isActive = true AND tc.tenantId = :tenantId")
+    List<UUID> findDistinctSubjectIdsByTeacherId(@Param("teacherId") UUID teacherId, @Param("tenantId") String tenantId);
+// Additional methods for assignment management
+    boolean existsByTeacherIdAndSectionIdAndSubjectIdAndAcademicYearId(
+            UUID teacherId, UUID sectionId, UUID subjectId, UUID academicYearId);
+
+
+    
+    List<TeacherClass> findBySectionIdAndTenantId(UUID sectionId, String tenantId);
+    
+    Optional<TeacherClass> findByIdAndTenantId(UUID id, String tenantId);
+    
+    int deleteByTeacherIdAndTenantId(UUID teacherId, String tenantId);
+
 }

@@ -43,6 +43,7 @@ public class AttendanceController {
         return ResponseEntity.status(HttpStatus.CREATED).body(newAttendanceRecord);
     }
 
+<<<<<<< Updated upstream
     @PostMapping("/bulk")
     @Operation(summary = "Mark bulk attendance", description = "Mark attendance for multiple students")
     @PreAuthorize("hasAnyRole('TEACHER', 'ADMIN', 'SUPER_ADMIN')")
@@ -138,4 +139,9 @@ public class AttendanceController {
         attendanceService.deleteAttendance(id);
         return ResponseEntity.noContent().build();
     }
+=======
+
+
+    // Endpoints for fetching attendance records would go here.
+>>>>>>> Stashed changes
 }

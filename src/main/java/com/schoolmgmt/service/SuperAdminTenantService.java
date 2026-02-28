@@ -41,7 +41,8 @@ public class SuperAdminTenantService {
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
     private final EmailService emailService;
-    private final ClassSectionService classSectionService;
+    private final SchoolClassService classSectionService;
+    private final UserService userService;
 
     /**
      * Create a new tenant as SuperAdmin
@@ -84,10 +85,22 @@ public class SuperAdminTenantService {
         Tenant savedTenant = tenantRepository.save(tenant);
 
         // Create admin user if requested
-        User adminUser = null;
-        if (request.getAdminUser() != null) {
-            adminUser = createTenantAdminUser(savedTenant, request.getAdminUser());
-        }
+//        User adminUser = null;
+//        if (request.getAdminUser() != null) {
+//            adminUser = createTenantAdminUser(savedTenant, request.getAdminUser());
+//        }
+
+        // Create admin user if requested
+//        User userRequest = null;
+//        if (request.getUserRequest() != null) {
+//            userRequest = createTenantAdminUser(savedTenant,request.getUserRequest());
+//        }
+//        
+        // create superadmin user
+
+        User superadmin = userService.createUser("SUPER_ADMIN", request.getUserRequest(), savedTenant.getIdentifier());
+
+
 
         // TODO: Class creation logic temporarily disabled for testing
         log.info("Tenant created successfully without classes - class creation will be tested separately");
@@ -484,43 +497,43 @@ public class SuperAdminTenantService {
         }
     }
 
-    private User createTenantAdminUser(Tenant tenant, com.schoolmgmt.dto.common.AdminUserRequest adminUserRequest) {
-        if (userRepository.existsByUsernameAndTenantId(adminUserRequest.getUsername(), tenant.getIdentifier())) {
-            throw new BusinessException("Username already exists: " + adminUserRequest.getUsername());
-        }
-        
-        String tenantPrefix = tenant.getIdentifier();
-        Integer lastSequence = userRepository.findMaxSequenceForTenant(tenantPrefix);
-        if (lastSequence == null) {
-            lastSequence = 0;
-        }
-        
-        String userId = adminUserRequest.getUserId();
-        if (userId == null || userId.trim().isEmpty()) {
-            userId = String.format("%s%05d", tenantPrefix, lastSequence + 1);
-        }
-        
-        User adminUser = User.builder()
-                .userId(userId)
-                .username(adminUserRequest.getUsername())
-                .email(adminUserRequest.getEmail())
-                .password(passwordEncoder.encode(adminUserRequest.getPassword()))
-                .firstName(adminUserRequest.getFirstName())
-                .lastName(adminUserRequest.getLastName())
-                .phone(adminUserRequest.getPhone())
-                .role(User.UserRole.ADMIN)
-                .emailVerified(true) // SuperAdmin created users are pre-verified
-                .isActive(true)
-                .accountNonLocked(true)
-                .build();
-                
-        adminUser.setTenantId(tenant.getIdentifier());
-        
-        User savedUser = userRepository.save(adminUser);
-        log.info("SuperAdmin created admin user: {} for tenant: {}", savedUser.getUsername(), tenant.getIdentifier());
-        
-        return savedUser;
-    }
+//    private User createTenantAdminUser(Tenant tenant, com.schoolmgmt.dto.common.UserRequest UserRequest) {
+////        if (userRepository.existsByUsernameAndTenantId(adminUserRequest.getUsername(), tenant.getIdentifier())) {
+////            throw new BusinessException("Username already exists: " + adminUserRequest.getUsername());
+////        }
+//
+//        String tenantPrefix = tenant.getIdentifier();
+//        Integer lastSequence = userRepository.findMaxSequenceForTenant(tenantPrefix);
+//        if (lastSequence == null) {
+//            lastSequence = 0;
+//        }
+//
+//        String userId = UserRequest.getUserId();
+//        if (userId == null || userId.trim().isEmpty()) {
+//            userId = String.format("%s%05d", tenantPrefix, lastSequence + 1);
+//        }
+//
+//        User adminUser = User.builder()
+//                .userId(userId)
+//                .username(adminUserRequest.getUsername())
+//                .email(adminUserRequest.getEmail())
+//                .password(passwordEncoder.encode(adminUserRequest.getPassword()))
+//                .firstName(adminUserRequest.getFirstName())
+//                .lastName(adminUserRequest.getLastName())
+//                .phone(adminUserRequest.getPhone())
+//                .role(User.UserRole.ADMIN)
+//                .emailVerified(true) // SuperAdmin created users are pre-verified
+//                .isActive(true)
+//                .accountNonLocked(true)
+//                .build();
+//
+//        adminUser.setTenantId(tenant.getIdentifier());
+//
+//        User savedUser = userRepository.save(adminUser);
+//        log.info("SuperAdmin created admin user: {} for tenant: {}", savedUser.getUsername(), tenant.getIdentifier());
+//
+//        return savedUser;
+//    }
 
     private Specification<Tenant> buildTenantSpecification(TenantFilterRequest filter) {
         return (root, query, cb) -> {
@@ -670,11 +683,28 @@ public class SuperAdminTenantService {
                 .build();
     }
 
-    private void createInitialClassesForTenant(Tenant tenant, User adminUser, List<com.schoolmgmt.dto.request.CreateSchoolClassRequest> initialClasses) {
-        try {
-            // Set tenant context for class creation
-            TenantContext.setCurrentTenant(tenant.getIdentifier());
+//    private void createInitialClassesForTenant(Tenant tenant, User adminUser, List<com.schoolmgmt.dto.request.CreateSchoolClassRequest> initialClasses) {
+//        try {
+//            // Set tenant context for class creation
+//            TenantContext.setCurrentTenant(tenant.getIdentifier());
+//
+//            for (com.schoolmgmt.dto.request.CreateSchoolClassRequest classRequest : initialClasses) {
+//                try {
+//                    classSectionService.createSchoolClass(classRequest);
+//                    log.info("Created class '{}' for tenant: {}", classRequest.getClassIdentifier(), tenant.getName());
+//                } catch (Exception e) {
+//                    log.error("Failed to create class '{}' for tenant: {} - {}",
+//                            classRequest.getClassIdentifier(), tenant.getName(), e.getMessage());
+//                }
+//            }
+//        } catch (Exception e) {
+//            log.error("Failed to create initial classes for tenant: {} - {}", tenant.getName(), e.getMessage());
+//        } finally {
+//            TenantContext.clear();
+//        }
+//    }
 
+<<<<<<< Updated upstream
             for (com.schoolmgmt.dto.request.CreateSchoolClassRequest classRequest : initialClasses) {
                 try {
                     classSectionService.createSchoolClass(classRequest);
@@ -723,4 +753,38 @@ public class SuperAdminTenantService {
             TenantContext.clear();
         }
     }
+=======
+//    private void createDefaultClassesForTenant(Tenant tenant, User adminUser) {
+//        try {
+//            // Set tenant context for class creation
+//            TenantContext.setCurrentTenant(tenant.getIdentifier());
+//
+//            // Create common classes for Indian schools (Classes 1-12)
+//            String[] classes = {"1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12"};
+//
+//            for (String classCode : classes) {
+//                try {
+//                    com.schoolmgmt.dto.request.CreateSchoolClassRequest classRequest =
+//                            com.schoolmgmt.dto.request.CreateSchoolClassRequest.builder()
+//                                    .classIdentifier(classCode)
+//                                    .name("Class " + classCode)
+//                                    .description("Standard class " + classCode)
+//                                    .build();
+//
+//                    classSectionService.createSchoolClass(classRequest);
+//                    log.info("Created default class '{}' for tenant: {}", classCode, tenant.getName());
+//                } catch (Exception e) {
+//                    log.error("Failed to create default class '{}' for tenant: {} - {}",
+//                            classCode, tenant.getName(), e.getMessage());
+//                }
+//            }
+//
+//            log.info("Created default classes (1-12) for tenant: {}", tenant.getName());
+//        } catch (Exception e) {
+//            log.error("Failed to create default classes for tenant: {} - {}", tenant.getName(), e.getMessage());
+//        } finally {
+//            TenantContext.clear();
+//        }
+//    }
+>>>>>>> Stashed changes
 }
