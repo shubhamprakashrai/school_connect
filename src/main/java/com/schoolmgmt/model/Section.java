@@ -27,13 +27,13 @@ public class Section extends BaseEntity {
     @Column(name = "capacity")
     private Integer capacity;
 
-    @Column(name = "school_class_id", nullable = false)
-    private UUID schoolClassId;
+//    @Column(name = "school_class_id", nullable = false)
+//    private UUID schoolClassId;
+
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "school_class_id", insertable = false, updatable = false)
+    @JoinColumn(name = "school_class_id", nullable = false)
     private SchoolClass schoolClass;
-
     /**
      * The teacher who is the primary class teacher for this specific section.
      */

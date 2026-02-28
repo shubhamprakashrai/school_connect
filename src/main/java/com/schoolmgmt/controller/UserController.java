@@ -62,15 +62,15 @@ public class UserController {
         UserResponse user = userService.getUserById(userId);
         return ResponseEntity.ok(user);
     }
-
-    @PostMapping
-    @Operation(summary = "Create new user", description = "Create a new user in the system")
-    @PreAuthorize("hasAnyRole('ADMIN', 'SUPER_ADMIN')")
-    public ResponseEntity<UserResponse> createUser(@Valid @RequestBody CreateUserRequest request) {
-        log.info("Creating new user: {}", request.getEmail());
-        UserResponse user = userService.createUser(request);
-        return ResponseEntity.status(HttpStatus.CREATED).body(user);
-    }
+//
+//    @PostMapping
+//    @Operation(summary = "Create new user", description = "Create a new user in the system")
+//    @PreAuthorize("hasAnyRole('ADMIN', 'SUPER_ADMIN')")
+//    public ResponseEntity<UserResponse> createUser(@Valid @RequestBody CreateUserRequest request) {
+//        log.info("Creating new user: {}", request.getEmail());
+//        UserResponse user = userService.createUser(request);
+//        return ResponseEntity.status(HttpStatus.CREATED).body(user);
+//    }
 
     @PutMapping("/{userId}")
     @Operation(summary = "Update user", description = "Update user information")

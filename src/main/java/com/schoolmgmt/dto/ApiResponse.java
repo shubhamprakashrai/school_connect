@@ -20,7 +20,7 @@ import java.util.Map;
 @AllArgsConstructor
 @JsonInclude(JsonInclude.Include.NON_NULL)
 @Schema(description = "Generic API response")
-public class ApiResponse {
+public class ApiResponse<T> {
 
     @Schema(description = "Response status", example = "SUCCESS")
     private ResponseStatus status;
@@ -29,7 +29,7 @@ public class ApiResponse {
     private String message;
 
     @Schema(description = "Response data")
-    private Object data;
+    private T data;
 
     @Schema(description = "Error details")
     private ErrorDetails error;
@@ -39,44 +39,52 @@ public class ApiResponse {
     private LocalDateTime timestamp = LocalDateTime.now();
 
     // Convenience factory methods
-    public static ApiResponse success(String message) {
-        return ApiResponse.builder()
+    public static <T> ApiResponse<T> success(String message) {
+        return ApiResponse.<T>builder()
                 .status(ResponseStatus.SUCCESS)
                 .message(message)
                 .build();
     }
 
-    public static ApiResponse success(String message, Object data) {
-        return ApiResponse.builder()
+    public static <T> ApiResponse<T> success(String message, T data) {
+        return ApiResponse.<T>builder()
                 .status(ResponseStatus.SUCCESS)
                 .message(message)
                 .data(data)
                 .build();
     }
 
-    public static ApiResponse error(String message) {
-        return ApiResponse.builder()
+    public static <T> ApiResponse<T> success(T data) {
+        return ApiResponse.<T>builder()
+                .status(ResponseStatus.SUCCESS)
+                .message("Operation completed successfully")
+                .data(data)
+                .build();
+    }
+
+    public static <T> ApiResponse<T> error(String message) {
+        return ApiResponse.<T>builder()
                 .status(ResponseStatus.ERROR)
                 .message(message)
                 .build();
     }
 
-    public static ApiResponse error(String message, ErrorDetails error) {
-        return ApiResponse.builder()
+    public static <T> ApiResponse<T> error(String message, ErrorDetails error) {
+        return ApiResponse.<T>builder()
                 .status(ResponseStatus.ERROR)
                 .message(message)
                 .error(error)
                 .build();
     }
 
-    public static ApiResponse validationError(String message, Map<String, List<String>> fieldErrors) {
+    public static <T> ApiResponse<T> validationError(String message, Map<String, List<String>> fieldErrors) {
         ErrorDetails error = ErrorDetails.builder()
                 .code("VALIDATION_ERROR")
                 .details("Validation failed")
                 .fieldErrors(fieldErrors)
                 .build();
         
-        return ApiResponse.builder()
+        return ApiResponse.<T>builder()
                 .status(ResponseStatus.ERROR)
                 .message(message)
                 .error(error)

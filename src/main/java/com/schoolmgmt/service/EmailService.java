@@ -1,5 +1,6 @@
 package com.schoolmgmt.service;
 
+import com.schoolmgmt.exception.EmailSendException;
 import com.schoolmgmt.model.User;
 import jakarta.mail.MessagingException;
 import jakarta.mail.internet.MimeMessage;
@@ -124,11 +125,11 @@ public class EmailService {
             message.setTo(to);
             message.setSubject(subject);
             message.setText(text);
-            
             mailSender.send(message);
             log.info("Email sent to: {}", to);
         } catch (Exception e) {
             log.error("Failed to send email to: {}", to, e);
+            throw new EmailSendException("Failed to send email to: " + to, e);
         }
     }
     
@@ -137,7 +138,6 @@ public class EmailService {
      */
     private void sendHtmlEmail(String to, String subject, String templateName, Map<String, Object> variables) {
         try {
-            // For now, send simple text email as templates are not created yet
             StringBuilder text = new StringBuilder();
             text.append("Dear ").append(variables.get("userName")).append(",\n\n");
             
@@ -169,9 +169,9 @@ public class EmailService {
             text.append("\n\nBest regards,\n").append(appName).append(" Team");
             
             sendSimpleEmail(to, subject, text.toString());
-            
         } catch (Exception e) {
             log.error("Failed to send HTML email to: {}", to, e);
+            throw new EmailSendException("Failed to send HTML email to: " + to, e);
         }
     }
     
@@ -201,6 +201,7 @@ public class EmailService {
             log.error("Failed to send templated email to: {}", to, e);
             // Fallback to simple email
             sendHtmlEmail(to, subject, templateName, variables);
+            throw new EmailSendException("Failed to send templated email to: " + to, e);
         }
     }
 }

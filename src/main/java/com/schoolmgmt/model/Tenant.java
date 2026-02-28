@@ -110,6 +110,11 @@ public class Tenant {
     @Builder.Default
     private Integer currentStorageMb = 0;
 
+    // Student Login Configuration
+    @Column(name = "student_login_required", nullable = false)
+    @Builder.Default
+    private Boolean studentLoginRequired = false;
+
     // Timestamps
     @CreationTimestamp
     @Column(name = "created_at", nullable = false, updatable = false)

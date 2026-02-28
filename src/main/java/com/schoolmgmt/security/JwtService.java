@@ -34,7 +34,8 @@ public class JwtService {
      * Extract username from JWT token
      */
     public String extractUsername(String token) {
-        return extractClaim(token, Claims::getSubject);
+        final Claims claims = extractAllClaims(token);
+        return claims.get("username", String.class);
     }
 
     /**
@@ -54,6 +55,18 @@ public class JwtService {
     }
 
     /**
+     * Extract student login required flag from JWT token
+     */
+    public Boolean extractStudentLoginRequired(String token) {
+        final Claims claims = extractAllClaims(token);
+        return claims.get("studentLoginRequired", Boolean.class);
+    }
+
+    // for exteacting values
+
+
+
+    /**
      * Extract specific claim from token
      */
     public <T> T extractClaim(String token, Function<Claims, T> claimsResolver) {
@@ -64,10 +77,13 @@ public class JwtService {
     /**
      * Generate token for user
      */
-    public String generateToken(UserDetails userDetails, String tenantId, String role) {
+    public String generateToken(UserDetails userDetails, String tenantId, String role, String username, Boolean studentLoginRequired) {
         Map<String, Object> extraClaims = new HashMap<>();
         extraClaims.put("tenantId", tenantId);
         extraClaims.put("role", role);
+        extraClaims.put("username", username);
+        extraClaims.put("studentLoginRequired", studentLoginRequired);
+
         return generateToken(extraClaims, userDetails);
     }
 

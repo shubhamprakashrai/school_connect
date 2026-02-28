@@ -1,9 +1,9 @@
 package com.schoolmgmt.controller;
 
 import com.schoolmgmt.dto.request.TeacherCreationRequest;
-import com.schoolmgmt.dto.request.TeacherAssignmentRequest;
+import com.schoolmgmt.dto.request.TeacherUpdateRequest;
+import com.schoolmgmt.dto.response.TeacherResponse;
 import com.schoolmgmt.model.Teacher;
-import com.schoolmgmt.model.TeacherClass;
 import com.schoolmgmt.service.TeacherService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
@@ -20,7 +20,10 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
+<<<<<<< Updated upstream
 import java.util.List;
+=======
+>>>>>>> Stashed changes
 import java.util.UUID;
 
 @RestController
@@ -28,12 +31,17 @@ import java.util.UUID;
 @RequiredArgsConstructor
 @Slf4j
 @SecurityRequirement(name = "bearerAuth")
+<<<<<<< Updated upstream
 @Tag(name = "Teacher Management", description = "APIs for managing school teachers")
+=======
+@Tag(name = "Teacher Management", description = "Teacher management APIs")
+>>>>>>> Stashed changes
 public class TeacherController {
 
     private final TeacherService teacherService;
 
     @PostMapping
+<<<<<<< Updated upstream
     @Operation(summary = "Create new teacher", description = "Create a new teacher with user account")
     @PreAuthorize("hasAnyRole('ADMIN', 'SUPER_ADMIN')")
     public ResponseEntity<Teacher> createTeacher(@Valid @RequestBody TeacherCreationRequest request) {
@@ -104,5 +112,52 @@ public class TeacherController {
         log.info("Fetching assignments for teacher: {}", id);
         List<TeacherClass> assignments = teacherService.getTeacherAssignments(id);
         return ResponseEntity.ok(assignments);
+=======
+    @PreAuthorize("hasAnyRole('ADMIN','SUPER_ADMIN')")
+    public ResponseEntity<TeacherResponse> createTeacher(@Valid @RequestBody TeacherCreationRequest request) {
+        TeacherResponse createdTeacher = teacherService.createTeacher(request);
+        return new ResponseEntity<>(createdTeacher, HttpStatus.CREATED);
+    }
+
+    @GetMapping("/{teacherId}")
+    @Operation(summary = "Get teacher by ID", description = "Get teacher details by teacher ID")
+    @PreAuthorize("hasAnyRole('ADMIN','SUPER_ADMIN','TEACHER')")
+    public ResponseEntity<TeacherResponse> getTeacherById(@PathVariable UUID teacherId) {
+        log.info("Fetching teacher: {}", teacherId);
+        TeacherResponse teacher = teacherService.getTeacherById(teacherId);
+        return ResponseEntity.ok(teacher);
+    }
+
+    @GetMapping
+    @Operation(summary = "Get all teachers", description = "Get all teachers with pagination and filtering")
+    @PreAuthorize("hasAnyRole('ADMIN','SUPER_ADMIN','TEACHER')")
+    public ResponseEntity<Page<TeacherResponse>> getAllTeachers(
+            @RequestParam(required = false) String status,
+            @RequestParam(required = false) String department,
+            @PageableDefault(size = 20, sort = "firstName", direction = Sort.Direction.ASC) Pageable pageable) {
+        log.info("Fetching teachers with filters - status: {}, department: {}", status, department);
+        Page<TeacherResponse> teachers = teacherService.getAllTeachers(status, department, pageable);
+        return ResponseEntity.ok(teachers);
+    }
+
+    @PutMapping("/{teacherId}")
+    @Operation(summary = "Update teacher", description = "Update teacher information")
+    @PreAuthorize("hasAnyRole('ADMIN','SUPER_ADMIN')")
+    public ResponseEntity<TeacherResponse> updateTeacher(
+            @PathVariable UUID teacherId,
+            @Valid @RequestBody TeacherUpdateRequest request) {
+        log.info("Updating teacher: {}", teacherId);
+        TeacherResponse updatedTeacher = teacherService.updateTeacher(teacherId, request);
+        return ResponseEntity.ok(updatedTeacher);
+    }
+
+    @DeleteMapping("/{teacherId}")
+    @Operation(summary = "Delete teacher", description = "Delete teacher and all associated assignments")
+    @PreAuthorize("hasAnyRole('ADMIN','SUPER_ADMIN')")
+    public ResponseEntity<Void> deleteTeacher(@PathVariable UUID teacherId) {
+        log.info("Deleting teacher: {}", teacherId);
+        teacherService.deleteTeacher(teacherId);
+        return ResponseEntity.noContent().build();
+>>>>>>> Stashed changes
     }
 }

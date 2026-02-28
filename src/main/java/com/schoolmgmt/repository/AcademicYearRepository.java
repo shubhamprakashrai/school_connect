@@ -6,6 +6,7 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
+import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -13,8 +14,11 @@ import java.util.UUID;
 public interface AcademicYearRepository extends JpaRepository<AcademicYear, UUID> {
     
     @Query("SELECT a FROM AcademicYear a WHERE a.tenantId = :tenantId AND a.isActive = true")
-    Optional<AcademicYear> findActiveByTenantId(@Param("tenantId") UUID tenantId);
-    
+    Optional<AcademicYear> findActiveByTenantId(@Param("tenantId") String tenantId);
+
     @Query("SELECT a FROM AcademicYear a WHERE a.tenantId = :tenantId AND a.name = :name")
-    Optional<AcademicYear> findByTenantIdAndName(@Param("tenantId") UUID tenantId, @Param("name") String name);
+    Optional<AcademicYear> findByTenantIdAndName(@Param("tenantId") String tenantId, @Param("name") String name);
+
+    @Query("SELECT a FROM AcademicYear a WHERE a.tenantId = :tenantId ORDER BY a.startDate DESC")
+    List<AcademicYear> findByTenantId(@Param("tenantId") String tenantId);
 }

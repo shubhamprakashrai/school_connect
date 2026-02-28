@@ -56,7 +56,7 @@ public interface UserRepository extends JpaRepository<User, UUID> {
     boolean existsByUsernameAndTenantId(String username, String tenantId);
 
     // Get the max sequence number for a tenant prefix
-    @Query(value = "SELECT COALESCE(MAX(CAST(SUBSTRING(username, LENGTH(:tenantPrefix) + 1) AS INTEGER)), 0) " +
+    @Query(value = "SELECT COALESCE(MAX(CAST(REGEXP_REPLACE(SUBSTRING(username, LENGTH(:tenantPrefix) + 1), '\\D', '', 'g') AS INTEGER)), 0) " +
             "FROM users WHERE username LIKE CONCAT(:tenantPrefix, '%')", nativeQuery = true)
     Integer findMaxSequenceForTenant(@Param("tenantPrefix") String tenantPrefix);
 
@@ -67,6 +67,11 @@ public interface UserRepository extends JpaRepository<User, UUID> {
      * @return true if exists, false otherwise
      */
     boolean existsByEmail(String email);
+
+    /**
+     * Check if phone exists for a tenant
+     */
+    boolean existsByPhoneAndTenantId(String phone, String tenantId);
 
     /**
      * Check if phone exists
@@ -80,6 +85,11 @@ public interface UserRepository extends JpaRepository<User, UUID> {
      * Check if email exists for a tenant
      */
     boolean existsByEmailAndTenantId(String email, String tenantId);
+
+    /**
+     * Check if email exists for a tenant and role
+     */
+    boolean existsByEmailAndRole(String email, User.UserRole role);
 
     /**
      * Find users by tenant ID

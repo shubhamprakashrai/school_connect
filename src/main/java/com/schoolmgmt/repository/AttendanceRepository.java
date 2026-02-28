@@ -77,6 +77,13 @@ public interface AttendanceRepository extends JpaRepository<Attendance, UUID>, J
     boolean existsByStudentIdAndAttendanceDateAndTenantId(UUID studentId, LocalDate date, String tenantId);
 
     /**
+     * Check if attendance exists for teacher on date
+     * Note: Using studentId field to store teacherId for teacher attendance records
+     */
+    @Query("SELECT CASE WHEN COUNT(a) > 0 THEN true ELSE false END FROM Attendance a WHERE a.studentId = :teacherId AND a.teacherClassId IS NULL AND a.attendanceDate = :date AND a.tenantId = :tenantId")
+    boolean existsByTeacherIdAndAttendanceDateAndTenantId(@Param("teacherId") UUID teacherId, @Param("date") LocalDate date, @Param("tenantId") String tenantId);
+
+    /**
      * Count attendance by status for class on specific date
      */
     @Query("SELECT a.status, COUNT(a) FROM Attendance a WHERE a.teacherClassId = :teacherClassId AND a.attendanceDate = :date AND a.tenantId = :tenantId GROUP BY a.status")

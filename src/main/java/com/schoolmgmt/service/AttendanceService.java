@@ -4,9 +4,11 @@ import com.schoolmgmt.dto.request.AttendanceMarkingRequest;
 import com.schoolmgmt.exception.BadRequestException;
 import com.schoolmgmt.exception.ResourceNotFoundException;
 import com.schoolmgmt.model.Attendance;
+import com.schoolmgmt.model.Section;
 import com.schoolmgmt.model.Student;
 import com.schoolmgmt.model.TeacherClass;
 import com.schoolmgmt.repository.AttendanceRepository;
+import com.schoolmgmt.repository.SectionRepository;
 import com.schoolmgmt.repository.StudentRepository;
 import com.schoolmgmt.repository.TeacherClassRepository;
 import lombok.RequiredArgsConstructor;
@@ -27,6 +29,7 @@ public class AttendanceService {
     private final AttendanceRepository attendanceRepository;
     private final StudentRepository studentRepository;
     private final TeacherClassRepository teacherClassRepository;
+    private final SectionRepository sectionRepository;
 
     @Transactional
     public Attendance markAttendance(AttendanceMarkingRequest request) {
@@ -37,8 +40,12 @@ public class AttendanceService {
         TeacherClass teacherClass = teacherClassRepository.findById(request.getTeacherClassId())
                 .orElseThrow(() -> new ResourceNotFoundException("TeacherClass", "id", request.getTeacherClassId()));
 
+        // Fetch Section entity from ID
+        Section section = sectionRepository.getReferenceById(student.getSection().getId());
+
+
         // 2. Important Validation: Ensure the student belongs to the section of the class assignment.
-        if (!student.getSectionId().equals(teacherClass.getSectionId())) {
+        if (!student.getSection().getId().equals(teacherClass.getSectionId())) {
             throw new BadRequestException("Student does not belong to the section of this class.");
         }
 

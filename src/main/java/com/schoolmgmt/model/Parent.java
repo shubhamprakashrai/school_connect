@@ -13,27 +13,30 @@ import java.util.Set;
  */
 @Entity
 @Table(name = "parents",
-       indexes = {
-           @Index(name = "idx_parent_email", columnList = "email, tenant_id", unique = true),
-           @Index(name = "idx_parent_phone", columnList = "phone, tenant_id"),
-           @Index(name = "idx_parent_status", columnList = "status"),
-           @Index(name = "idx_parent_type", columnList = "parent_type")
-       })
+        indexes = {
+                @Index(name = "idx_parent_email", columnList = "email, tenant_id", unique = true),
+                @Index(name = "idx_parent_phone", columnList = "phone, tenant_id"),
+                @Index(name = "idx_parent_status", columnList = "status"),
+                @Index(name = "idx_parent_type", columnList = "parent_type")
+        })
 @Data
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-@EqualsAndHashCode(callSuper = true)
-@ToString(exclude = {"user", "children", "wards"})
+@EqualsAndHashCode(callSuper = true, onlyExplicitlyIncluded = true)
+@ToString(callSuper = true, onlyExplicitlyIncluded = true)
 public class Parent extends BaseEntity {
 
     // Personal Information
+    @ToString.Include
     @Column(name = "first_name", nullable = false, length = 100)
     private String firstName;
 
+    @ToString.Include
     @Column(name = "middle_name", length = 100)
     private String middleName;
 
+    @ToString.Include
     @Column(name = "last_name", nullable = false, length = 100)
     private String lastName;
 
@@ -49,9 +52,12 @@ public class Parent extends BaseEntity {
     private LocalDate dateOfBirth;
 
     // Contact Information
+    @EqualsAndHashCode.Include
+    @ToString.Include
     @Column(name = "email", nullable = false, length = 100)
     private String email;
 
+    @ToString.Include
     @Column(name = "phone", nullable = false, length = 20)
     private String phone;
 
@@ -161,15 +167,21 @@ public class Parent extends BaseEntity {
     // System User Link
     @OneToOne
     @JoinColumn(name = "user_id", unique = true)
+    @ToString.Exclude
+    @EqualsAndHashCode.Exclude
     private User user; // Link to user account for portal login
 
     // Relationships
     @ManyToMany(mappedBy = "parents", fetch = FetchType.LAZY)
     @Builder.Default
+    @ToString.Exclude
+    @EqualsAndHashCode.Exclude
     private Set<Student> children = new HashSet<>(); // Biological children
 
     @ManyToMany(mappedBy = "guardians", fetch = FetchType.LAZY)
     @Builder.Default
+    @ToString.Exclude
+    @EqualsAndHashCode.Exclude
     private Set<Student> wards = new HashSet<>(); // Guardian relationship
 
     // Notes and Remarks

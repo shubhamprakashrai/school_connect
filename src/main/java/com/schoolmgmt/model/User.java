@@ -148,8 +148,8 @@ public class User extends BaseEntity implements UserDetails, TenantAware {
 
     @Override
     public String getUsername() {
-        // Our email field serves as the username.
-        return email;
+        // Return the actual username field
+        return username;
     }
 
     @Override
