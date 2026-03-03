@@ -95,23 +95,24 @@ public interface ParentRepository extends JpaRepository<Parent, UUID>, JpaSpecif
                                Pageable pageable);
 
     /**
-     * Find parents of a student
+     * Find parents of a student (tenant-aware)
      */
-    @Query("SELECT p FROM Parent p JOIN p.children s WHERE s.id = :studentId")
-    List<Parent> findParentsByStudentId(@Param("studentId") UUID studentId);
+    @Query("SELECT p FROM Parent p JOIN p.children s WHERE s.id = :studentId AND s.tenantId = :tenantId")
+    List<Parent> findParentsByStudentId(@Param("studentId") UUID studentId, @Param("tenantId") String tenantId);
 
     /**
-     * Find guardians of a student
+     * Find guardians of a student (tenant-aware)
      */
-    @Query("SELECT p FROM Parent p JOIN p.wards s WHERE s.id = :studentId")
-    List<Parent> findGuardiansByStudentId(@Param("studentId") UUID studentId);
+    @Query("SELECT p FROM Parent p JOIN p.wards s WHERE s.id = :studentId AND s.tenantId = :tenantId")
+    List<Parent> findGuardiansByStudentId(@Param("studentId") UUID studentId, @Param("tenantId") String tenantId);
 
     /**
-     * Find all parents/guardians of a student
+     * Find all parents/guardians of a student (tenant-aware)
      */
     @Query("SELECT DISTINCT p FROM Parent p LEFT JOIN p.children c LEFT JOIN p.wards w " +
-           "WHERE c.id = :studentId OR w.id = :studentId")
-    List<Parent> findAllByStudentId(@Param("studentId") UUID studentId);
+           "WHERE (c.id = :studentId OR w.id = :studentId) AND " +
+           "(c.tenantId = :tenantId OR w.tenantId = :tenantId) AND p.tenantId = :tenantId")
+    List<Parent> findAllByStudentId(@Param("studentId") UUID studentId, @Param("tenantId") String tenantId);
 
     /**
      * Count active parents by tenant
@@ -192,6 +193,28 @@ public interface ParentRepository extends JpaRepository<Parent, UUID>, JpaSpecif
     @Query("UPDATE Parent p SET p.isPrimaryContact = CASE WHEN p.id = :parentId THEN true ELSE false END " +
            "WHERE p IN (SELECT p2 FROM Parent p2 JOIN p2.children s WHERE s.id = :studentId)")
     void updatePrimaryContactForStudent(@Param("parentId") UUID parentId, @Param("studentId") UUID studentId);
+
+    /**
+     * Create parent-student relationship with correct tenant_id
+     */
+    @Modifying
+    @Query(value = "INSERT INTO student_parents (student_id, parent_id, tenant_id) VALUES (:studentId, :parentId, :tenantId) " +
+                  "ON CONFLICT (student_id, parent_id, tenant_id) DO NOTHING", 
+           nativeQuery = true)
+    void createParentStudentRelationship(@Param("parentId") UUID parentId, 
+                                   @Param("studentId") UUID studentId, 
+                                   @Param("tenantId") String tenantId);
+
+    /**
+     * Create student-guardian relationship with correct tenant_id
+     */
+    @Modifying
+    @Query(value = "INSERT INTO student_guardians (student_id, guardian_id, tenant_id) VALUES (:studentId, :guardianId, :tenantId) " +
+                  "ON CONFLICT (student_id, guardian_id, tenant_id) DO NOTHING", 
+           nativeQuery = true)
+    void createStudentGuardianRelationship(@Param("guardianId") UUID guardianId, 
+                                     @Param("studentId") UUID studentId, 
+                                     @Param("tenantId") String tenantId);
 
 
 //    Optional<Parent> findByEmailAndTenantId(String email, String tenantId);

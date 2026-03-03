@@ -26,8 +26,9 @@
         <springdoc.version>2.8.9</springdoc.version>
         <jwt.version>0.12.6</jwt.version>
         <mapstruct.version>1.5.5.Final</mapstruct.version>
-        <lombok.version>1.18.38</lombok.version>
+        <lombok.version>1.18.40</lombok.version>
         <apache.poi.version>5.2.5</apache.poi.version>
+        <flyway.version>10.20.0</flyway.version>
         <opencsv.version>5.9</opencsv.version>
     </properties>
 
@@ -79,6 +80,7 @@
         <dependency>
             <groupId>org.flywaydb</groupId>
             <artifactId>flyway-core</artifactId>
+            <version>${flyway.version}</version>
         </dependency>
 
         <!-- JWT -->
@@ -213,7 +215,7 @@
                         <path>
                             <groupId>org.projectlombok</groupId>
                             <artifactId>lombok</artifactId>
-                            <version>1.18.38</version>
+                            <version>1.18.40</version>
                         </path>
                         <path>
                             <groupId>org.mapstruct</groupId>

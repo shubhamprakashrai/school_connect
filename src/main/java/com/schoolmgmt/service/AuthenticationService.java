@@ -287,13 +287,7 @@ public class AuthenticationService {
     public void firstTimePasswordChange(FirstTimePasswordChange request) {
         log.info("Password reset confirmation attempt for username {}", request.getUsername());
 
-<<<<<<< Updated upstream
-        userRepository.findByUsernameOrEmail(request.getUsername())
-                .ifPresent(user -> {
-                    try {
-                        // Set current tenant for multi-tenant handling
-                        TenantContext.setCurrentTenant(user.getTenantId());
-=======
+
         User user = userRepository.findByUsernameOrEmail(request.getUsername())
                 .orElseThrow(() -> new UsernameNotFoundException(
                         "User not found with username or email: " + request.getUsername()
@@ -301,31 +295,26 @@ public class AuthenticationService {
         try {
             // Set current tenant for multi-tenant handling
             TenantContext.setCurrentTenant(user.getTenantId());
->>>>>>> Stashed changes
+
 
             // 1. Validate if user requires initial reset
-            if (user.isTemporaryPassword()) {
+            if (!user.isTemporaryPassword()) {
                 throw new PasswordChangeException("Initial reset not required");
             }
 
-<<<<<<< Updated upstream
-                        // 2. Validate current password
-                        if (!passwordEncoder.matches(request.getCurrentPassword(), user.getPassword())) {
-                            throw new PasswordChangeException("Invalid current password");
-                        }
-=======
+
             // 2. Validate current password
             if (!passwordEncoder.matches(request.getCurrentPassword(), user.getPassword())) {
                 throw new PasswordChangeException("Invalid current password");
 
             }
->>>>>>> Stashed changes
+
 
             // 3. Encode new password
             String encodedNewPassword = passwordEncoder.encode(request.getNewPassword());
-
             // 4. Update password + flags in DB
             int updated = userRepository.setInitialPasswordReset(user.getId(), encodedNewPassword, LocalDateTime.now());
+//            userRepository.updatingIsTemporaryPasswordValue(false);
             log.info("Password update result = {}", updated);
 
             if (updated == 0) {
@@ -335,19 +324,13 @@ public class AuthenticationService {
             // Optionally, send confirmation email
             emailService.sendPasswordChangeConfirmation(user);
 
-<<<<<<< Updated upstream
-                    } finally {
-                        // Always clear tenant context to prevent memory leaks
-                        TenantContext.clear();
-                    }
-                });
-=======
+
         } finally {
             // Always clear tenant context to prevent memory leaks
             TenantContext.clear();
         }
 
->>>>>>> Stashed changes
+
     }
 
     /**

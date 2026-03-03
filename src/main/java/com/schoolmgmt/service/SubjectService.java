@@ -36,7 +36,7 @@ public class SubjectService {
         log.info("Creating subject: {}", request.getName());
 
         // Check if subject code already exists
-        if (subjectRepository.existsByCodeAndTenantId(request.getCode(), getCurrentTenantId())) {
+        if (subjectRepository.existsByTenantIdAndCode(getCurrentTenantId(), request.getCode())) {
             throw new DuplicateResourceException("Subject with code '" + request.getCode() + "' already exists");
         }
 
@@ -88,7 +88,7 @@ public class SubjectService {
     }
 
     public Subject getSubjectByCode(String code) {
-        return subjectRepository.findByCodeAndTenantId(code, getCurrentTenantId())
+        return subjectRepository.findByTenantIdAndCode(getCurrentTenantId(), code)
                 .orElseThrow(() -> new ResourceNotFoundException("Subject", "code", code));
     }
 
@@ -109,8 +109,7 @@ public class SubjectService {
     }
 
     public Page<Subject> searchSubjects(String query, Pageable pageable) {
-        return subjectRepository.findByNameContainingIgnoreCaseOrCodeContainingIgnoreCaseAndTenantId(
-                query, query, getCurrentTenantId(), pageable);
+        return subjectRepository.searchSubjects(query, getCurrentTenantId(), pageable);
     }
 
     @Transactional
@@ -121,7 +120,7 @@ public class SubjectService {
 
         // Check if new code conflicts with existing subjects (excluding current one)
         if (!subject.getCode().equals(request.getCode()) && 
-            subjectRepository.existsByCodeAndTenantId(request.getCode(), getCurrentTenantId())) {
+            subjectRepository.existsByTenantIdAndCode(getCurrentTenantId(), request.getCode())) {
             throw new DuplicateResourceException("Subject with code '" + request.getCode() + "' already exists");
         }
 

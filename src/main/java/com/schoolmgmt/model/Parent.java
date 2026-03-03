@@ -172,13 +172,13 @@ public class Parent extends BaseEntity {
     private User user; // Link to user account for portal login
 
     // Relationships
-    @ManyToMany(mappedBy = "parents", fetch = FetchType.LAZY)
+    @ManyToMany(mappedBy = "parents", fetch = FetchType.EAGER)
     @Builder.Default
     @ToString.Exclude
     @EqualsAndHashCode.Exclude
     private Set<Student> children = new HashSet<>(); // Biological children
 
-    @ManyToMany(mappedBy = "guardians", fetch = FetchType.LAZY)
+    @ManyToMany(mappedBy = "guardians", fetch = FetchType.EAGER)
     @Builder.Default
     @ToString.Exclude
     @EqualsAndHashCode.Exclude

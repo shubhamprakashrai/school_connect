@@ -24,7 +24,7 @@ public class SectionMapper {
                 .name(section.getName())
                 .capacity(section.getCapacity())
                 .schoolClassId(schoolClass != null ? schoolClass.getId() : null)
-                .schoolClassCode(schoolClass != null ? schoolClass.getClassIdentifier() : null)
+                .schoolClassCode(schoolClass != null ? schoolClass.getCode() : null)
                 .schoolClassName(schoolClass != null ? schoolClass.getName() : null)
                 .classTeacherId(section.getClassTeacher() != null ? section.getClassTeacher().getId() : null)
                 .classTeacherName(section.getClassTeacher() != null

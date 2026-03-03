@@ -16,23 +16,14 @@ import java.util.List;
 @AllArgsConstructor
 @Schema(description = "Create school class request")
 public class CreateSchoolClassRequest {
-<<<<<<< Updated upstream
-    
-    @NotBlank(message = "Class code is required")
-    @Size(max = 20)
-    @Schema(description = "Unique class code", example = "10")
-    private String code;
-    
-    @NotBlank(message = "Class name is required")
-=======
+
 
 //    @Size(max = 20)
 //    @NotBlank
 //    @Schema(description = "Unique class code", example = "10")
 //    private String classIdentifier;
 
-    @NotBlank
->>>>>>> Stashed changes
+
     @Size(max = 100)
     @Schema(description = "Class name", example = "Class 10")
     private String name;
@@ -40,10 +31,6 @@ public class CreateSchoolClassRequest {
     @Size(max = 500)
     @Schema(description = "Class description")
     private String description;
-<<<<<<< Updated upstream
-    
-    @Schema(description = "List of sections to create with this class")
-    private List<CreateSectionRequest> sections;
-=======
->>>>>>> Stashed changes
+
+
 }

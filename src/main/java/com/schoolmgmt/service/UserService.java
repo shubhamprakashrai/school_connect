@@ -133,7 +133,15 @@ public class UserService {
             //fetching value of role and username from the token
             String tenantrole = tenantTokenUtil.extractRoleFromCurrentToken();
             String username = tenantTokenUtil.extractUsernameFromCurrentToken();
-            user.setCreatedBy(username + "-" + tenantrole);
+            if(username==null && tenantrole==null)
+            {
+                user.setCreatedBy("System");
+            }
+            else
+            {
+                user.setCreatedBy(username + "-" + tenantrole);
+            }
+
 
             // --- Save user ---
             User savedUser = userRepository.save(user);

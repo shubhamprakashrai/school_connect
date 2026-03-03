@@ -178,12 +178,20 @@ public interface UserRepository extends JpaRepository<User, UUID> {
     @Transactional
     @Query("UPDATE User u " +
             "SET u.password = :password, " +
-            "u.temporaryPassword = true, " +
+            "u.temporaryPassword = false, " +
             "u.lastPasswordChangeAt = :changedAt " +
             "WHERE u.id = :userId")
     int setInitialPasswordReset(@Param("userId") UUID userId,
                        @Param("password") String password,
                        @Param("changedAt") LocalDateTime changedAt);
+
+//    /**
+//     * Update temporary password flag to false after password change
+//     */
+//    @Modifying(clearAutomatically = true, flushAutomatically = true)
+//    @Transactional
+//    @Query("UPDATE User u SET u.temporaryPassword = false WHERE u.id = :userId")
+//    void updatingIsTemporaryPasswordValue(@Param("userId") UUID userId);
 
 
 

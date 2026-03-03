@@ -49,6 +49,16 @@ public class SubjectController {
         return ResponseEntity.status(HttpStatus.CREATED).body(createdSubjects);
     }
 
+    @GetMapping("/paginated")
+    @Operation(summary = "Get all subjects (paginated)", description = "Get paginated list of all subjects")
+    @PreAuthorize("hasAnyRole('ADMIN', 'SUPER_ADMIN', 'TEACHER', 'STUDENT')")
+    public ResponseEntity<Page<Subject>> getAllSubjectsPaginated(
+            @PageableDefault(size = 20, sort = "name", direction = Sort.Direction.ASC) Pageable pageable) {
+        log.info("Fetching all subjects (paginated)");
+        Page<Subject> subjects = subjectService.getAllSubjects(pageable);
+        return ResponseEntity.ok(subjects);
+    }
+
     @GetMapping
     @Operation(summary = "Get all subjects", description = "Get paginated list of all subjects")
     @PreAuthorize("hasAnyRole('ADMIN', 'SUPER_ADMIN', 'TEACHER', 'STUDENT')")

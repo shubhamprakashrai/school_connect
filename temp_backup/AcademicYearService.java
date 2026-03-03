@@ -2,15 +2,12 @@ package com.schoolmgmt.service;
 
 import com.schoolmgmt.dto.request.AcademicYearRequest;
 import com.schoolmgmt.dto.response.AcademicYearResponse;
-//import com.schoolmgmt.exception.BusinessException;
-//import com.schoolmgmt.exception.InternalServiceException;
-//import com.schoolmgmt.exception.ResourceNotFoundException;
+import com.schoolmgmt.exception.BusinessException;
+import com.schoolmgmt.exception.InternalServiceException;
+import com.schoolmgmt.exception.ResourceNotFoundException;
 import com.schoolmgmt.model.AcademicYear;
-import com.schoolmgmt.repository.*;
-//import com.schoolmgmt.repository.AcademicYearRepository;
-import com.schoolmgmt.repository.*;
-import  com.schoolmgmt.exception.*;
-import com.schoolmgmt.util.*;
+import com.schoolmgmt.repository.AcademicYearRepository;
+import com.schoolmgmt.util.TenantContext;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -85,7 +82,9 @@ public class AcademicYearService {
             String tenantId = TenantContext.requireCurrentTenant();
             log.debug("Fetching all academic years for tenant: {}", tenantId);
 
-            List<AcademicYear> academicYears = academicYearRepository.findByTenantId(tenantId);
+            List<AcademicYear> academicYears = academicYearRepository.findAll().stream()
+                    .filter(ay -> ay.getTenantId().equals(tenantId))
+                    .collect(Collectors.toList());
 
             return academicYears.stream()
                     .map(this::toResponse)
@@ -109,7 +108,8 @@ public class AcademicYearService {
             String tenantId = TenantContext.requireCurrentTenant();
             log.debug("Fetching academic year: {} for tenant: {}", id, tenantId);
 
-            AcademicYear academicYear = academicYearRepository.findByIdAndTenantId(id, tenantId)
+            AcademicYear academicYear = academicYearRepository.findById(id)
+                    .filter(ay -> ay.getTenantId().equals(tenantId))
                     .orElseThrow(() -> new ResourceNotFoundException("AcademicYear", "id", id));
 
             return toResponse(academicYear);
@@ -161,7 +161,8 @@ public class AcademicYearService {
             String tenantId = TenantContext.requireCurrentTenant();
             log.info("Updating academic year: {} for tenant: {}", id, tenantId);
 
-            AcademicYear academicYear = academicYearRepository.findByIdAndTenantId(id, tenantId)
+            AcademicYear academicYear = academicYearRepository.findById(id)
+                    .filter(ay -> ay.getTenantId().equals(tenantId))
                     .orElseThrow(() -> new ResourceNotFoundException("AcademicYear", "id", id));
 
             // Check name uniqueness if changed
@@ -209,12 +210,13 @@ public class AcademicYearService {
             String tenantId = TenantContext.requireCurrentTenant();
             log.info("Setting active academic year: {} for tenant: {}", id, tenantId);
 
-            AcademicYear academicYear = academicYearRepository.findByIdAndTenantId(id, tenantId)
+            AcademicYear academicYear = academicYearRepository.findById(id)
+                    .filter(ay -> ay.getTenantId().equals(tenantId))
                     .orElseThrow(() -> new ResourceNotFoundException("AcademicYear", "id", id));
 
             // Deactivate all other academic years for this tenant
-            List<AcademicYear> allYears = academicYearRepository.findByTenantId(tenantId).stream()
-                    .filter(ay -> !ay.getId().equals(id))
+            List<AcademicYear> allYears = academicYearRepository.findAll().stream()
+                    .filter(ay -> ay.getTenantId().equals(tenantId) && !ay.getId().equals(id))
                     .collect(Collectors.toList());
 
             for (AcademicYear ay : allYears) {
@@ -249,7 +251,8 @@ public class AcademicYearService {
             String tenantId = TenantContext.requireCurrentTenant();
             log.info("Deleting academic year: {} for tenant: {}", id, tenantId);
 
-            AcademicYear academicYear = academicYearRepository.findByIdAndTenantId(id, tenantId)
+            AcademicYear academicYear = academicYearRepository.findById(id)
+                    .filter(ay -> ay.getTenantId().equals(tenantId))
                     .orElseThrow(() -> new ResourceNotFoundException("AcademicYear", "id", id));
 
             academicYearRepository.delete(academicYear);

@@ -53,29 +53,29 @@ public class Subject extends BaseEntity {
     @Column(name = "department", length = 100)
     private String department;
 
-    @Column(name = "is_active", nullable = false)
+    @Column(name = "is_active", nullable = true)
     @Builder.Default
     private Boolean isActive = true;
 
-    @ElementCollection
+    @ElementCollection(fetch = FetchType.EAGER)
     @CollectionTable(name = "subject_prerequisites", joinColumns = @JoinColumn(name = "subject_id"))
     @Column(name = "prerequisite")
     @Builder.Default
     private List<String> prerequisites = new ArrayList<>();
 
-    @ElementCollection
+    @ElementCollection(fetch = FetchType.EAGER)
     @CollectionTable(name = "subject_learning_objectives", joinColumns = @JoinColumn(name = "subject_id"))
     @Column(name = "objective", length = 500)
     @Builder.Default
     private List<String> learningObjectives = new ArrayList<>();
 
     // Many-to-Many relationship with SchoolClass
-    @ManyToMany(mappedBy = "subjects", fetch = FetchType.LAZY, cascade = CascadeType.PERSIST)
+    @ManyToMany(mappedBy = "subjects", fetch = FetchType.EAGER, cascade = CascadeType.PERSIST)
     @Builder.Default
     private Set<SchoolClass> classes = new HashSet<>();
 
     // One-to-Many relationship with TeacherSubject
-    @OneToMany(mappedBy = "subject", fetch = FetchType.LAZY, cascade = CascadeType.ALL, orphanRemoval = true)
+    @OneToMany(mappedBy = "subject", fetch = FetchType.EAGER, cascade = CascadeType.ALL, orphanRemoval = true)
     @Builder.Default
     private Set<TeacherSubject> teacherSubjects = new HashSet<>();
 

@@ -21,4 +21,7 @@ public interface AcademicYearRepository extends JpaRepository<AcademicYear, UUID
 
     @Query("SELECT a FROM AcademicYear a WHERE a.tenantId = :tenantId ORDER BY a.startDate DESC")
     List<AcademicYear> findByTenantId(@Param("tenantId") String tenantId);
+
+    @Query("SELECT a FROM AcademicYear a WHERE a.id = :id AND a.tenantId = :tenantId")
+    Optional<AcademicYear> findByIdAndTenantId(@Param("id") UUID id, @Param("tenantId") String tenantId);
 }

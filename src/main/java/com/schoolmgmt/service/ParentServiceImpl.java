@@ -138,11 +138,10 @@ public class ParentServiceImpl implements ParentService {
             log.info("Parent already exists. Linking student {} to parent {}",
                     student.getId(), existing.getId());
 
-            // ADD student to parent relationship
-            existing.getChildren().add(student);
-            // OR existing.getWards().add(student); based on your logic
-
-            return parentRepository.save(existing);
+            // Manually create the parent-student relationship with correct tenant_id
+            parentRepository.createParentStudentRelationship(existing.getId(), student.getId(), tenantId);
+            
+            return existing;
         }
 
         // Only create new user if parent doesn't exist
@@ -175,9 +174,10 @@ public class ParentServiceImpl implements ParentService {
                 .user(parentUser)
                 .build();
 
-        parent.getChildren().add(student);  // link the student
-
         Parent saved = parentRepository.save(parent);
+
+        // Manually create the parent-student relationship with correct tenant_id
+        parentRepository.createParentStudentRelationship(saved.getId(), student.getId(), tenantId);
 
         log.info("Parent created and linked to student: {}", saved.getId());
         return saved;

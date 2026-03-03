@@ -7,6 +7,8 @@ import jakarta.persistence.UniqueConstraint;
 import lombok.*;
 
 import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.util.UUID;
 
 /**
  * Represents an academic year or session in the school (e.g., "2024-2025").

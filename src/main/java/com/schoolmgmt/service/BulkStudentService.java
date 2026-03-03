@@ -205,7 +205,7 @@ public class BulkStudentService {
     private SchoolClass createExampleSchoolClass() {
         SchoolClass schoolClass = new SchoolClass();
         schoolClass.setId(UUID.randomUUID());
-        schoolClass.setClassIdentifier("CLASS-001");
+        schoolClass.setCode("CLASS-001");
         schoolClass.setName("Grade 10");
         schoolClass.setDescription("Example class for template");
         return schoolClass;

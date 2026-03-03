@@ -24,29 +24,7 @@ public interface SubjectRepository extends JpaRepository<Subject, UUID> {
     @Query("SELECT s FROM Subject s WHERE s.tenantId = :tenantId AND s.code = :code")
     Optional<Subject> findByTenantIdAndCode(@Param("tenantId") String tenantId, @Param("code") String code);
     
-<<<<<<< Updated upstream
-    @Query("SELECT s FROM Subject s WHERE s.id = :id AND s.tenantId = :tenantId")
-    Optional<Subject> findByIdAndTenantId(@Param("id") UUID id, @Param("tenantId") String tenantId);
-    
-    @Query("SELECT s FROM Subject s WHERE s.code = :code AND s.tenantId = :tenantId")
-    Optional<Subject> findByCodeAndTenantId(@Param("code") String code, @Param("tenantId") String tenantId);
-    
-    @Query("SELECT COUNT(s) > 0 FROM Subject s WHERE s.code = :code AND s.tenantId = :tenantId")
-    boolean existsByCodeAndTenantId(@Param("code") String code, @Param("tenantId") String tenantId);
-    
-    @Query("SELECT s FROM Subject s JOIN s.classes c WHERE c.id = :classId AND s.tenantId = :tenantId")
-    List<Subject> findByClassId(@Param("classId") UUID classId);
-    
-    @Query("SELECT s FROM Subject s JOIN s.teacherSubjects ts WHERE ts.teacherId = :teacherId AND s.tenantId = :tenantId")
-    List<Subject> findByTeacherId(@Param("teacherId") UUID teacherId);
-    
-    @Query("SELECT s FROM Subject s WHERE (LOWER(s.name) LIKE LOWER(CONCAT('%', :name, '%')) OR LOWER(s.code) LIKE LOWER(CONCAT('%', :code, '%'))) AND s.tenantId = :tenantId")
-    Page<Subject> findByNameContainingIgnoreCaseOrCodeContainingIgnoreCaseAndTenantId(
-            @Param("name") String name, 
-            @Param("code") String code, 
-            @Param("tenantId") String tenantId, 
-            Pageable pageable);
-=======
+
     @Query("SELECT s FROM Subject s WHERE s.tenantId = :tenantId AND s.id = :id")
     Optional<Subject> findByIdAndTenantId(@Param("id") UUID id, @Param("tenantId") String tenantId);
     
@@ -66,5 +44,11 @@ public interface SubjectRepository extends JpaRepository<Subject, UUID> {
     boolean existsByTenantIdAndCode(String tenantId, String code);
     
     boolean existsByTenantIdAndName(String tenantId, String name);
->>>>>>> Stashed changes
+    
+    @Query("SELECT s FROM Subject s JOIN s.classes c WHERE c.id = :classId")
+    List<Subject> findByClassId(@Param("classId") UUID classId);
+    
+    @Query("SELECT DISTINCT s FROM Subject s JOIN s.teacherSubjects ts WHERE ts.teacher.id = :teacherId")
+    List<Subject> findByTeacherId(@Param("teacherId") UUID teacherId);
+
 }

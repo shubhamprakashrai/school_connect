@@ -7,6 +7,11 @@ import java.time.LocalDate;
 import java.util.HashSet;
 import java.util.Set;
 
+import com.schoolmgmt.model.SchoolClass;
+import com.schoolmgmt.model.Section;
+import com.schoolmgmt.model.User;
+import com.schoolmgmt.model.Parent;
+
 /**
  * Student entity representing a student in the school system.
  */
@@ -186,8 +191,6 @@ public class Student extends BaseEntity {
     // System User Link
     @OneToOne
     @JoinColumn(name = "user_id", unique = true)
-    @ToString.Exclude
-    @EqualsAndHashCode.Exclude
     private User user; // Link to user account for login
 
     // Relationships
@@ -195,11 +198,11 @@ public class Student extends BaseEntity {
     @JoinTable(
             name = "student_parents",
             joinColumns = @JoinColumn(name = "student_id"),
-            inverseJoinColumns = @JoinColumn(name = "parent_id")
+            inverseJoinColumns = @JoinColumn(name = "parent_id"),
+            foreignKey = @ForeignKey(name = "fk_student_parents_student"),
+            inverseForeignKey = @ForeignKey(name = "fk_student_parents_parent")
     )
     @Builder.Default
-    @ToString.Exclude
-    @EqualsAndHashCode.Exclude
     private Set<Parent> parents = new HashSet<>();
 
     @ManyToMany(fetch = FetchType.LAZY)
@@ -209,8 +212,6 @@ public class Student extends BaseEntity {
             inverseJoinColumns = @JoinColumn(name = "guardian_id")
     )
     @Builder.Default
-    @ToString.Exclude
-    @EqualsAndHashCode.Exclude
     private Set<Parent> guardians = new HashSet<>();
 
     // Metadata

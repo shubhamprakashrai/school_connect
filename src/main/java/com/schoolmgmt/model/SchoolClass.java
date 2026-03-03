@@ -26,8 +26,14 @@ public class SchoolClass extends BaseEntity {
     /**
      * The unique code for the class, e.g., "10", "VI", "NURSERY". This is the business identifier.
      */
-    @Column(name = "code", nullable = false, length = 20)
+    @Column(name = "code", nullable = true, length = 20)
     private String code;
+    
+    /**
+     * The class identifier generated based on tenant, e.g., "SM00005CL01".
+     */
+    @Column(name = "class_identifier", nullable = false, unique = true, length = 50)
+    private String classIdentifier;
 
     /**
      * The full display name of the class, e.g., "Grade 10", "Class VI".
@@ -44,25 +50,18 @@ public class SchoolClass extends BaseEntity {
     /**
      * The sections that belong to this class.
      */
-<<<<<<< Updated upstream
-    @OneToMany(mappedBy = "schoolClass", cascade = CascadeType.ALL, orphanRemoval = true)
-    @Builder.Default
-    private Set<Section> sections = new HashSet<>();
 
-    /**
-     * The subjects taught in this class.
-     */
-    @ManyToMany(cascade = {CascadeType.PERSIST, CascadeType.MERGE})
+    @OneToMany(mappedBy = "schoolClass", fetch = FetchType.LAZY, cascade = CascadeType.ALL)
+    private Set<Section> sections = new HashSet<>(); // <-- initialize here
+    
+    // Many-to-Many relationship with Subject
+    @ManyToMany(fetch = FetchType.LAZY, cascade = CascadeType.PERSIST)
     @JoinTable(
-        name = "class_subjects",
-        joinColumns = @JoinColumn(name = "class_id"),
+        name = "school_class_subjects",
+        joinColumns = @JoinColumn(name = "school_class_id"),
         inverseJoinColumns = @JoinColumn(name = "subject_id")
     )
     @Builder.Default
     private Set<Subject> subjects = new HashSet<>();
 }
-=======
-    @OneToMany(mappedBy = "schoolClass", fetch = FetchType.LAZY, cascade = CascadeType.ALL)
-    private Set<Section> sections = new HashSet<>(); // <-- initialize here
-}
->>>>>>> Stashed changes
+

@@ -13,6 +13,7 @@ import com.schoolmgmt.repository.SchoolClassRepository;
 import com.schoolmgmt.repository.SectionRepository;
 import com.schoolmgmt.service.SchoolClassService;
 import com.schoolmgmt.util.TenantContext;
+import com.schoolmgmt.util.TenantTokenUtil;
 import com.schoolmgmt.util.UserIdGeneratorBasedonTenantIdentifies;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -33,6 +34,7 @@ public class SchoolClassServiceImpl implements SchoolClassService {
     private final SchoolClassRepository schoolClassRepository;
     private final SchoolClassMapper schoolClassMapper;
     private final SectionRepository sectionRepository;
+    private final TenantTokenUtil tenantTokenUtil;
 
     @Override
     public SchoolClassResponse createClass(CreateSchoolClassRequest request) {
@@ -52,22 +54,37 @@ public class SchoolClassServiceImpl implements SchoolClassService {
                 .ofNullable(schoolClassRepository.findMaxSequenceForTenant(tenantId))
                 .orElse(0);
 
-        // Generate identifier
+        // Generate identifier - increment sequence to avoid duplicates
         String classIdentifier = UserIdGeneratorBasedonTenantIdentifies
-                .generateNextCode(tenantId + "CL", lastSequence, 2);
+                .generateNextCode(tenantId + "CL", lastSequence + 1, 2);
 
-        log.info("Generated classIdentifier '{}' for tenant {}", classIdentifier, tenantId);
+        log.info("Generated classIdentifier '{}' for tenant {} (last sequence was {})", classIdentifier, tenantId, lastSequence);
 
         // Create entity
         SchoolClass schoolClass = SchoolClass.builder()
                 .classIdentifier(classIdentifier)
+                .code(classIdentifier) // Set code to same value as classIdentifier
                 .name(request.getName())
                 .description(request.getDescription() == null ? "" : request.getDescription())
                 .sections(new HashSet<>()) // ensure sections set is initialized
                 .build();
 
-        schoolClass.setCreatedBy("system");
-        schoolClass.setUpdatedBy("system");
+
+        //fetching value of role and username from the token
+        String tenantrole = tenantTokenUtil.extractRoleFromCurrentToken();
+        String username = tenantTokenUtil.extractUsernameFromCurrentToken();
+        if(username==null && tenantrole==null)
+        {
+            schoolClass.setCreatedBy("system");
+            schoolClass.setUpdatedBy("system");
+        }
+        else
+        {
+            schoolClass.setCreatedBy(username + "-" + tenantrole);
+            schoolClass.setUpdatedBy(username + "-" + tenantrole);
+        }
+
+
 
         // Create default section "A"
         Section defaultSection = Section.builder()
@@ -163,10 +180,12 @@ public class SchoolClassServiceImpl implements SchoolClassService {
                 );
             }
 
-            String identifier = tenantId + String.format("%02d", sequence++);
+            String identifier = tenantId + String.format("%02d", sequence);
+            sequence++; // Increment after using the sequence
 
             SchoolClass schoolClass = SchoolClass.builder()
                     .classIdentifier(identifier)
+                    .code(identifier) // Set code to same value as classIdentifier
                     .name(request.getName())
                     .description(request.getDescription() == null ? "" : request.getDescription())
 //                    .tenantId(tenantId)

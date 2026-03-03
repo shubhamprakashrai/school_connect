@@ -199,7 +199,7 @@ public class StudentService {
                     .rollNumber(savedStudent.getRollNumber())
                     .schoolClass(SchoolClassResponse.builder()
                             .id(schoolClass.getId())
-                            .code(schoolClass.getClassIdentifier())
+                            .code(schoolClass.getCode())
                             .name(schoolClass.getName())
                             .description(schoolClass.getDescription())
                             .build())
@@ -526,7 +526,7 @@ public class StudentService {
             SchoolClass sc = student.getSchoolClass();
             schoolClassResponse = SchoolClassResponse.builder()
                     .id(sc.getId())
-                    .code(sc.getClassIdentifier())
+                    .code(sc.getCode())
                     .name(sc.getName())
                     .description(sc.getDescription())
                     .createdAt(sc.getCreatedAt())
@@ -699,21 +699,15 @@ public class StudentService {
             throw new ResourceNotFoundException("Parent", "id", parentId);
         }
         
-        // Link based on relationship type
+        // Create relationship with correct tenant_id using repository method
         if ("GUARDIAN".equals(relationshipType)) {
-            // Add to guardians relationship
-            student.getGuardians().add(parent);
-            parent.getWards().add(student);
-            log.info("Linked student {} to guardian {}", student.getId(), parent.getId());
+            // For guardians, we need to use the student_guardians table
+            parentRepository.createStudentGuardianRelationship(parent.getId(), student.getId(), tenantId);
+            log.info("Linked student {} to guardian {} with tenant {}", student.getId(), parent.getId(), tenantId);
         } else {
-            // Add to parents relationship (FATHER, MOTHER, etc.)
-            student.getParents().add(parent);
-            parent.getChildren().add(student);
-            log.info("Linked student {} to parent {}", student.getId(), parent.getId());
+            // For parents, use the student_parents table
+            parentRepository.createParentStudentRelationship(parent.getId(), student.getId(), tenantId);
+            log.info("Linked student {} to parent {} with tenant {}", student.getId(), parent.getId(), tenantId);
         }
-        
-        // Save both sides of the relationship
-        studentRepository.save(student);
-        parentRepository.save(parent);
     }
 }

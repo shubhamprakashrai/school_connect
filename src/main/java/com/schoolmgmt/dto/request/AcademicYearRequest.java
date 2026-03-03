@@ -28,4 +28,6 @@ public class AcademicYearRequest {
 
     @Schema(description = "Is this the currently active academic year", example = "false")
     private Boolean isActive = false;
+    
+
 }

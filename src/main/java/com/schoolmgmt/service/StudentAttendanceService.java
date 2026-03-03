@@ -63,7 +63,7 @@ public class StudentAttendanceService {
                     .orElseThrow(() -> new ResourceNotFoundException("Section", "id", request.getSectionId()));
 
             // Validate academic year exists
-            academicYearRepository.findById(request.getAcademicYearId())
+            academicYearRepository.findByIdAndTenantId(request.getAcademicYearId(), tenantId)
                     .orElseThrow(() -> new ResourceNotFoundException("AcademicYear", "id", request.getAcademicYearId()));
 
             // Check if attendance already exists - update if it does

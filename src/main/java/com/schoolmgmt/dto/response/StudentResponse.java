@@ -32,6 +32,7 @@ public class StudentResponse {
     private String address;
     private String city;
     private String state;
+    private String country;
     private String postalCode;
     private SchoolClassResponse schoolClass;
     private SectionResponse section;

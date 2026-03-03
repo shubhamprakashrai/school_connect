@@ -150,7 +150,7 @@ public class TenantService implements TenantServiceInterface {
                 .email(userRequest.getEmail())
                 .firstName(userRequest.getFirstName())
                 .lastName(userRequest.getLastName())
-                .isTemporaryPassword(false)
+                .isTemporaryPassword(true)
                 .build();
 
         return TenantRegistrationResponse.builder()
