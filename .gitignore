@@ -89,6 +89,7 @@ temp/
 .env
 .env.local
 .env.*.local
+.render-hook
 
 # Docker
 docker-compose.override.yml
