@@ -21,7 +21,7 @@ import java.util.UUID;
  * Allows school admins to customize their school's configuration.
  */
 @RestController
-@RequestMapping("/api/tenant/settings")
+@RequestMapping("/tenant/settings")
 @RequiredArgsConstructor
 @Slf4j
 @SecurityRequirement(name = "bearerAuth")

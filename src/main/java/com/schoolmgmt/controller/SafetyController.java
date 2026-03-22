@@ -26,7 +26,7 @@ import java.util.UUID;
  * Controller for safety-related operations.
  */
 @RestController
-@RequestMapping("/api/safety")
+@RequestMapping("/safety")
 @RequiredArgsConstructor
 @Slf4j
 @Tag(name = "Safety", description = "Safety management APIs - incidents, counseling, emergency alerts")

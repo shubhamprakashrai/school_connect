@@ -33,7 +33,7 @@ import java.util.UUID;
  * Controller for notification and FCM token management.
  */
 @RestController
-@RequestMapping("/api/notifications")
+@RequestMapping("/notifications")
 @RequiredArgsConstructor
 @Slf4j
 @Tag(name = "Notifications", description = "Notification and FCM token management APIs")

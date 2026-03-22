@@ -22,7 +22,7 @@ import java.util.Map;
  * Most endpoints are restricted to Super Admin.
  */
 @RestController
-@RequestMapping("/api")
+@RequestMapping("/")
 @RequiredArgsConstructor
 @Slf4j
 @Tag(name = "Platform Config", description = "Platform configuration management APIs")

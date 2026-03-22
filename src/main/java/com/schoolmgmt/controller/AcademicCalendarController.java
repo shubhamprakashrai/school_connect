@@ -29,7 +29,7 @@ import java.util.UUID;
  * REST controller for academic calendar and event management operations.
  */
 @RestController
-@RequestMapping("/api/calendar")
+@RequestMapping("/calendar")
 @RequiredArgsConstructor
 @Slf4j
 @SecurityRequirement(name = "bearerAuth")

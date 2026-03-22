@@ -65,31 +65,20 @@ public class SecurityConfig implements WebMvcConfigurer {
 
     private static final String[] PUBLIC_URLS = {
             "/auth/login",
-            "/auth/register", 
+            "/auth/register",
             "/auth/refresh",
             "/auth/forgot-password",
             "/auth/reset-password",
             "/auth/Initialreset-password",
             "/auth/verify-email",
             "/auth/resend-verification",
-            "/api/auth/login",
-            "/api/auth/register",
-            "/api/auth/refresh", 
-            "/api/auth/forgot-password",
-            "/api/auth/reset-password",
-            "/api/auth/Initialreset-password",
-            "/api/auth/verify-email",
-            "/api/auth/resend-verification",
             "/public/**",
-            "/api/public/**",
             "/tenants/register",
-            "/api/tenants/register",
 
             "/v3/api-docs/**",
             "/swagger-ui/**",
             "/swagger-ui.html",
             "/actuator/health",
-            "/api/config/mobile",
             "/config/mobile",
             "/error"
     };

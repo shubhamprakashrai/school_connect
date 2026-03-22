@@ -91,6 +91,10 @@ temp/
 .env.*.local
 .render-hook
 
+# Firebase service account (NEVER commit this)
+**/firebase-service-account.json
+**/*-adminsdk-*.json
+
 # Docker
 docker-compose.override.yml
 .docker/

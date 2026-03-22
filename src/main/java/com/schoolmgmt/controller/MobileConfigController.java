@@ -14,7 +14,7 @@ import org.springframework.web.bind.annotation.*;
 
 @Slf4j
 @RestController
-@RequestMapping(path = {"/api/config", "/config"}, produces = "application/json")
+@RequestMapping(path = "/config", produces = "application/json")
 @Tag(name = "Mobile Configuration", description = "APIs for mobile app configuration management")
 public class MobileConfigController {
 
