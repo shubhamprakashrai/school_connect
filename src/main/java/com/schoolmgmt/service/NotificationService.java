@@ -1,5 +1,6 @@
 package com.schoolmgmt.service;
 
+import com.google.firebase.messaging.*;
 import com.schoolmgmt.model.FcmToken;
 import com.schoolmgmt.model.NotificationLog;
 import com.schoolmgmt.model.NotificationTemplate;
@@ -11,6 +12,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.lang.Nullable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -24,6 +26,8 @@ public class NotificationService {
     private final FcmTokenRepository fcmTokenRepository;
     private final NotificationLogRepository notificationLogRepository;
     private final NotificationTemplateRepository notificationTemplateRepository;
+    @Nullable
+    private final FirebaseMessaging firebaseMessaging;
 
     // ===== Send Notifications =====
 
@@ -213,21 +217,80 @@ public class NotificationService {
 
     private boolean sendPushNotification(List<FcmToken> tokens, String title, String body,
                                           String dataPayload) {
-        // TODO: Integrate Firebase Admin SDK for actual push delivery.
-        // For now, log the notification and mark as sent.
-        // When Firebase Admin SDK is added:
-        //   1. Add firebase-admin dependency to pom.xml
-        //   2. Place service-account.json in resources
-        //   3. Initialize FirebaseApp in a @Configuration class
-        //   4. Use FirebaseMessaging.getInstance().sendEachForMulticast(...)
-
-        for (FcmToken token : tokens) {
-            log.info("Push notification queued for token: {} (device: {}) - Title: {}",
-                    token.getToken().substring(0, Math.min(20, token.getToken().length())) + "...",
-                    token.getDeviceName(),
-                    title);
+        if (firebaseMessaging == null) {
+            log.warn("Firebase not configured. Notification logged but not delivered: {}", title);
+            return true; // Still mark as sent so notifications are saved
         }
 
-        return true; // Simulated success until Firebase Admin SDK is integrated
+        String tenantId = TenantContext.getCurrentTenant();
+        List<String> tokenStrings = tokens.stream()
+                .map(FcmToken::getToken)
+                .toList();
+
+        Notification notification = Notification.builder()
+                .setTitle(title)
+                .setBody(body)
+                .build();
+
+        // Build data map with tenant context
+        Map<String, String> data = new HashMap<>();
+        data.put("tenantId", tenantId != null ? tenantId : "");
+        if (dataPayload != null && !dataPayload.isBlank()) {
+            data.put("payload", dataPayload);
+        }
+
+        MulticastMessage message = MulticastMessage.builder()
+                .setNotification(notification)
+                .putAllData(data)
+                .setAndroidConfig(AndroidConfig.builder()
+                        .setPriority(AndroidConfig.Priority.HIGH)
+                        .setNotification(AndroidNotification.builder()
+                                .setClickAction("FLUTTER_NOTIFICATION_CLICK")
+                                .build())
+                        .build())
+                .setApnsConfig(ApnsConfig.builder()
+                        .setAps(Aps.builder()
+                                .setSound("default")
+                                .setBadge(1)
+                                .build())
+                        .build())
+                .addAllTokens(tokenStrings)
+                .build();
+
+        try {
+            BatchResponse response = firebaseMessaging.sendEachForMulticast(message);
+            log.info("FCM multicast sent: {}/{} successful for tenant: {}",
+                    response.getSuccessCount(), tokenStrings.size(), tenantId);
+
+            // Handle invalid tokens - deactivate them
+            if (response.getFailureCount() > 0) {
+                List<SendResponse> responses = response.getResponses();
+                for (int i = 0; i < responses.size(); i++) {
+                    if (!responses.get(i).isSuccessful()) {
+                        String failedToken = tokenStrings.get(i);
+                        FirebaseMessagingException ex = responses.get(i).getException();
+                        if (ex != null && isInvalidTokenError(ex)) {
+                            log.info("Deactivating invalid FCM token: {}...",
+                                    failedToken.substring(0, Math.min(20, failedToken.length())));
+                            fcmTokenRepository.findByToken(failedToken)
+                                    .ifPresent(t -> {
+                                        t.setIsActive(false);
+                                        fcmTokenRepository.save(t);
+                                    });
+                        }
+                    }
+                }
+            }
+
+            return response.getSuccessCount() > 0;
+        } catch (FirebaseMessagingException e) {
+            log.error("FCM send failed for tenant {}: {}", tenantId, e.getMessage());
+            return false;
+        }
+    }
+
+    private boolean isInvalidTokenError(FirebaseMessagingException ex) {
+        return ex.getMessagingErrorCode() == MessagingErrorCode.UNREGISTERED
+                || ex.getMessagingErrorCode() == MessagingErrorCode.INVALID_ARGUMENT;
     }
 }
