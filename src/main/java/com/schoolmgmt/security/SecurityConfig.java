@@ -40,6 +40,7 @@ import java.util.Arrays;
 public class SecurityConfig implements WebMvcConfigurer {
 
     private final JwtAuthenticationFilter jwtAuthFilter;
+    private final RateLimitFilter rateLimitFilter;
     private final AuthenticationProvider authenticationProvider;
     private final JwtAuthenticationEntryPoint jwtAuthenticationEntryPoint;
     private final TenantInterceptor tenantInterceptor;
@@ -100,6 +101,8 @@ public class SecurityConfig implements WebMvcConfigurer {
                 .addFilterBefore(tenantCleanupFilter, LogoutFilter.class)
                 // Add JWT filter before username/password authentication
                 .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class)
+                // Add rate limit filter after JWT so tenant context is available
+                .addFilterAfter(rateLimitFilter, JwtAuthenticationFilter.class)
                 .exceptionHandling(exception -> exception
                         .authenticationEntryPoint(jwtAuthenticationEntryPoint)
                 );
