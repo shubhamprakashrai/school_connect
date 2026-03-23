@@ -12,9 +12,12 @@ import com.schoolmgmt.exception.BusinessException;
 import com.schoolmgmt.exception.ResourceNotFoundException;
 import com.schoolmgmt.model.Student;
 import com.schoolmgmt.model.User;
+import com.schoolmgmt.model.Tenant;
 import com.schoolmgmt.repository.StudentRepository;
+import com.schoolmgmt.repository.TenantRepository;
 import com.schoolmgmt.repository.UserRepository;
 import com.schoolmgmt.util.TenantContext;
+import com.schoolmgmt.util.TenantIdFormatter;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
@@ -39,6 +42,7 @@ public class StudentService {
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
     private final EmailService emailService;
+    private final TenantRepository tenantRepository;
 
     /**
      * Create a new student
@@ -52,9 +56,20 @@ public class StudentService {
             throw new BusinessException("Roll number already exists in this class: " + request.getRollNumber());
         }
 
+        // Auto-generate rollNumber/studentId if not provided
+        String rollNumber = request.getRollNumber();
+        if (rollNumber == null || rollNumber.isBlank()) {
+            Tenant tenant = tenantRepository.findByIdentifier(tenantId).orElse(null);
+            String initials = tenant != null
+                    ? TenantIdFormatter.extractInitials(tenant.getName())
+                    : "SC";
+            int nextSeq = (int) studentRepository.countByTenantIdAndStatus(tenantId, Student.StudentStatus.ACTIVE) + 1;
+            rollNumber = TenantIdFormatter.generateStudentId(initials, nextSeq);
+        }
+
         // Create student entity
         Student student = Student.builder()
-                .rollNumber(request.getRollNumber())
+                .rollNumber(rollNumber)
                 .firstName(request.getFirstName())
                 .middleName(request.getMiddleName())
                 .lastName(request.getLastName())

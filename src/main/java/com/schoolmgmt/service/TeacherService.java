@@ -5,6 +5,8 @@ import com.schoolmgmt.dto.request.TeacherAssignmentRequest;
 import com.schoolmgmt.exception.ResourceNotFoundException;
 import com.schoolmgmt.model.*;
 import com.schoolmgmt.repository.*;
+import com.schoolmgmt.util.TenantContext;
+import com.schoolmgmt.util.TenantIdFormatter;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -25,6 +27,7 @@ public class TeacherService {
     private final SubjectRepository subjectRepository;
     private final AcademicYearRepository academicYearRepository;
     private final TeacherClassRepository teacherClassRepository;
+    private final TenantRepository tenantRepository;
     private final PasswordEncoder passwordEncoder;
 
     @Transactional
@@ -43,9 +46,21 @@ public class TeacherService {
                 .build();
         User savedUser = userRepository.save(user);
 
-        // 2. Create the Teacher profile with domain-specific info.
+        // 2. Auto-generate employeeId if not provided
+        String employeeId = request.getEmployeeId();
+        if (employeeId == null || employeeId.isBlank()) {
+            String tenantId = TenantContext.getCurrentTenant();
+            Tenant tenant = tenantRepository.findByIdentifier(tenantId).orElse(null);
+            String initials = tenant != null
+                    ? TenantIdFormatter.extractInitials(tenant.getName())
+                    : "SC";
+            int nextSeq = (int) teacherRepository.countByTenantIdAndStatus(tenantId, Teacher.TeacherStatus.ACTIVE) + 1;
+            employeeId = TenantIdFormatter.generateEmployeeId(initials, nextSeq);
+        }
+
+        // 3. Create the Teacher profile with domain-specific info.
         Teacher teacher = Teacher.builder()
-                .employeeId(request.getEmployeeId())
+                .employeeId(employeeId)
                 .firstName(request.getFirstName())
                 .lastName(request.getLastName())
                 .email(request.getEmail())
