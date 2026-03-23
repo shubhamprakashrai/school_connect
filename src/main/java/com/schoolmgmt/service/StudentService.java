@@ -44,6 +44,16 @@ public class StudentService {
     private final EmailService emailService;
     private final TenantRepository tenantRepository;
 
+    public String generateNextStudentId() {
+        String tenantId = TenantContext.requireCurrentTenant();
+        Tenant tenant = tenantRepository.findByIdentifier(tenantId).orElse(null);
+        String initials = tenant != null
+                ? TenantIdFormatter.extractInitials(tenant.getName())
+                : "SC";
+        int nextSeq = (int) studentRepository.countByTenantIdAndStatus(tenantId, Student.StudentStatus.ACTIVE) + 1;
+        return TenantIdFormatter.generateStudentId(initials, nextSeq);
+    }
+
     /**
      * Create a new student
      */
@@ -56,20 +66,9 @@ public class StudentService {
             throw new BusinessException("Roll number already exists in this class: " + request.getRollNumber());
         }
 
-        // Auto-generate rollNumber/studentId if not provided
-        String rollNumber = request.getRollNumber();
-        if (rollNumber == null || rollNumber.isBlank()) {
-            Tenant tenant = tenantRepository.findByIdentifier(tenantId).orElse(null);
-            String initials = tenant != null
-                    ? TenantIdFormatter.extractInitials(tenant.getName())
-                    : "SC";
-            int nextSeq = (int) studentRepository.countByTenantIdAndStatus(tenantId, Student.StudentStatus.ACTIVE) + 1;
-            rollNumber = TenantIdFormatter.generateStudentId(initials, nextSeq);
-        }
-
         // Create student entity
         Student student = Student.builder()
-                .rollNumber(rollNumber)
+                .rollNumber(request.getRollNumber())
                 .firstName(request.getFirstName())
                 .middleName(request.getMiddleName())
                 .lastName(request.getLastName())

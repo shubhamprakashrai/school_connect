@@ -30,6 +30,16 @@ public class TeacherService {
     private final TenantRepository tenantRepository;
     private final PasswordEncoder passwordEncoder;
 
+    public String generateNextEmployeeId() {
+        String tenantId = TenantContext.getCurrentTenant();
+        Tenant tenant = tenantRepository.findByIdentifier(tenantId).orElse(null);
+        String initials = tenant != null
+                ? TenantIdFormatter.extractInitials(tenant.getName())
+                : "SC";
+        int nextSeq = (int) teacherRepository.countByTenantIdAndStatus(tenantId, Teacher.TeacherStatus.ACTIVE) + 1;
+        return TenantIdFormatter.generateEmployeeId(initials, nextSeq);
+    }
+
     @Transactional
     public Teacher createTeacher(TeacherCreationRequest request) {
         // In a real app, you'd also check if the email is already taken for the current tenant.
@@ -46,21 +56,9 @@ public class TeacherService {
                 .build();
         User savedUser = userRepository.save(user);
 
-        // 2. Auto-generate employeeId if not provided
-        String employeeId = request.getEmployeeId();
-        if (employeeId == null || employeeId.isBlank()) {
-            String tenantId = TenantContext.getCurrentTenant();
-            Tenant tenant = tenantRepository.findByIdentifier(tenantId).orElse(null);
-            String initials = tenant != null
-                    ? TenantIdFormatter.extractInitials(tenant.getName())
-                    : "SC";
-            int nextSeq = (int) teacherRepository.countByTenantIdAndStatus(tenantId, Teacher.TeacherStatus.ACTIVE) + 1;
-            employeeId = TenantIdFormatter.generateEmployeeId(initials, nextSeq);
-        }
-
-        // 3. Create the Teacher profile with domain-specific info.
+        // 2. Create the Teacher profile with domain-specific info.
         Teacher teacher = Teacher.builder()
-                .employeeId(employeeId)
+                .employeeId(request.getEmployeeId())
                 .firstName(request.getFirstName())
                 .lastName(request.getLastName())
                 .email(request.getEmail())

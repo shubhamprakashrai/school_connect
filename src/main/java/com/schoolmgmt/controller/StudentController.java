@@ -24,6 +24,7 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.util.Map;
 import java.util.UUID;
 
 /**
@@ -39,6 +40,14 @@ public class StudentController {
 
     private final StudentService studentService;
     private final StudentBulkService studentBulkService;
+
+    @GetMapping("/next-id")
+    @Operation(summary = "Get next student ID", description = "Returns the next auto-generated roll number for this school")
+    @PreAuthorize("hasAnyRole('ADMIN', 'SUPER_ADMIN')")
+    public ResponseEntity<Map<String, String>> getNextStudentId() {
+        String nextId = studentService.generateNextStudentId();
+        return ResponseEntity.ok(Map.of("rollNumber", nextId));
+    }
 
     @PostMapping
     @Operation(summary = "Create new student", description = "Register a new student in the system")

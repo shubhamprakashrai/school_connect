@@ -21,6 +21,7 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 
 @RestController
@@ -32,6 +33,14 @@ import java.util.UUID;
 public class TeacherController {
 
     private final TeacherService teacherService;
+
+    @GetMapping("/next-id")
+    @Operation(summary = "Get next employee ID", description = "Returns the next auto-generated employee ID for this school")
+    @PreAuthorize("hasAnyRole('ADMIN', 'SUPER_ADMIN')")
+    public ResponseEntity<Map<String, String>> getNextEmployeeId() {
+        String nextId = teacherService.generateNextEmployeeId();
+        return ResponseEntity.ok(Map.of("employeeId", nextId));
+    }
 
     @PostMapping
     @Operation(summary = "Create new teacher", description = "Create a new teacher with user account")
