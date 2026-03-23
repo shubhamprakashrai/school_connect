@@ -42,6 +42,7 @@ public class SuperAdminTenantService {
     private final PasswordEncoder passwordEncoder;
     private final EmailService emailService;
     private final ClassSectionService classSectionService;
+    private final MasterDataService masterDataService;
 
     /**
      * Create a new tenant as SuperAdmin
@@ -95,7 +96,15 @@ public class SuperAdminTenantService {
             log.info("Created default classes (1-12) for tenant: {}", savedTenant.getName());
         }
 
-        log.info("SuperAdmin successfully created tenant: {} with identifier: {}", 
+        // Seed default master data for the tenant
+        try {
+            masterDataService.seedDefaultData(savedTenant.getIdentifier());
+            log.info("Seeded default master data for tenant: {}", savedTenant.getName());
+        } catch (Exception e) {
+            log.error("Failed to seed master data for tenant: {} - {}", savedTenant.getName(), e.getMessage());
+        }
+
+        log.info("SuperAdmin successfully created tenant: {} with identifier: {}",
                 savedTenant.getName(), savedTenant.getIdentifier());
 
         return toTenantRegistrationResponse(savedTenant);
