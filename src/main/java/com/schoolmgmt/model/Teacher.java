@@ -103,11 +103,11 @@ public class Teacher extends BaseEntity {
     @Column(name = "designation", nullable = false, length = 100)
     private String designation;
 
-    @ElementCollection
+    @ElementCollection(fetch = FetchType.EAGER)
     @CollectionTable(name = "teacher_subjects", joinColumns = @JoinColumn(name = "teacher_id"))
     @Column(name = "subject")
     @Builder.Default
-    private Set<String> subjects = new HashSet<>(); // Subjects the teacher can teach
+    private Set<String> subjects = new HashSet<>();
 
     @Column(name = "is_class_teacher")
     @Builder.Default
@@ -123,7 +123,7 @@ public class Teacher extends BaseEntity {
     @Column(name = "professional_qualification", length = 100)
     private String professionalQualification;
 
-    @ElementCollection
+    @ElementCollection(fetch = FetchType.EAGER)
     @CollectionTable(name = "teacher_qualifications", joinColumns = @JoinColumn(name = "teacher_id"))
     @Column(name = "qualification")
     @Builder.Default
@@ -135,7 +135,7 @@ public class Teacher extends BaseEntity {
     @Column(name = "previous_school", length = 200)
     private String previousSchool;
 
-    @ElementCollection
+    @ElementCollection(fetch = FetchType.EAGER)
     @CollectionTable(name = "teacher_specializations", joinColumns = @JoinColumn(name = "teacher_id"))
     @Column(name = "specialization")
     @Builder.Default
