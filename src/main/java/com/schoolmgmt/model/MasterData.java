@@ -24,7 +24,8 @@ public class MasterData extends BaseEntity {
         CLASS_CATEGORY,
         FEE_CATEGORY,
         LEAVE_TYPE,
-        SUBJECT_TYPE
+        SUBJECT_TYPE,
+        QUALIFICATION
     }
 
     @Enumerated(EnumType.STRING)

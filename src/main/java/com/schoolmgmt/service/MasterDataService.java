@@ -166,6 +166,43 @@ public class MasterDataService {
                 {"SENIOR_SECONDARY", "Senior Secondary (11-12)"}
         });
 
+        seedCategory(tenantId, MasterData.Category.SUBJECT_TYPE, new String[][]{
+                {"MATHEMATICS", "Mathematics"},
+                {"PHYSICS", "Physics"},
+                {"CHEMISTRY", "Chemistry"},
+                {"BIOLOGY", "Biology"},
+                {"ENGLISH", "English"},
+                {"HINDI", "Hindi"},
+                {"SANSKRIT", "Sanskrit"},
+                {"HISTORY", "History"},
+                {"GEOGRAPHY", "Geography"},
+                {"POLITICAL_SCIENCE", "Political Science"},
+                {"ECONOMICS", "Economics"},
+                {"BUSINESS_STUDIES", "Business Studies"},
+                {"ACCOUNTANCY", "Accountancy"},
+                {"COMPUTER_SCIENCE", "Computer Science"},
+                {"PHYSICAL_EDUCATION", "Physical Education"},
+                {"ART", "Art"},
+                {"MUSIC", "Music"}
+        });
+
+        seedCategory(tenantId, MasterData.Category.QUALIFICATION, new String[][]{
+                {"B_ED", "B.Ed"},
+                {"M_ED", "M.Ed"},
+                {"B_SC", "B.Sc"},
+                {"M_SC", "M.Sc"},
+                {"B_A", "B.A"},
+                {"M_A", "M.A"},
+                {"B_TECH", "B.Tech"},
+                {"M_TECH", "M.Tech"},
+                {"PHD", "Ph.D"},
+                {"D_EL_ED", "D.El.Ed"},
+                {"B_COM", "B.Com"},
+                {"M_COM", "M.Com"},
+                {"MBA", "MBA"},
+                {"OTHER", "Other"}
+        });
+
         log.info("Completed seeding default master data for tenant: {}", tenantId);
     }
 
