@@ -111,6 +111,12 @@ public class TeacherService {
     }
 
     @Transactional(readOnly = true)
+    public Page<Teacher> getAllTeachersIncludingDeleted(Pageable pageable) {
+        String tenantId = com.schoolmgmt.util.TenantContext.requireCurrentTenant();
+        return teacherRepository.findByTenantId(tenantId, pageable);
+    }
+
+    @Transactional(readOnly = true)
     public List<Teacher> getAllActiveTeachers() {
         String tenantId = com.schoolmgmt.util.TenantContext.requireCurrentTenant();
         return teacherRepository.findByStatusAndTenantId(Teacher.TeacherStatus.ACTIVE, tenantId);
@@ -155,18 +161,26 @@ public class TeacherService {
 
     @Transactional
     public void deleteTeacher(UUID id) {
-        Teacher teacher = getTeacherById(id);
-        teacher.setStatus(Teacher.TeacherStatus.INACTIVE);
-        teacher.setDeleted(true);
-        
-        // Deactivate user account
-        if (teacher.getUser() != null) {
-            User user = teacher.getUser();
-            user.setActive(false);
-            userRepository.save(user);
+        Teacher teacher = teacherRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Teacher", "id", id));
+
+        if (teacher.isDeleted()) {
+            // Already soft-deleted → hard delete
+            if (teacher.getUser() != null) {
+                userRepository.delete(teacher.getUser());
+            }
+            teacherRepository.delete(teacher);
+        } else {
+            // First delete → soft delete
+            teacher.setStatus(Teacher.TeacherStatus.INACTIVE);
+            teacher.setDeleted(true);
+            if (teacher.getUser() != null) {
+                User user = teacher.getUser();
+                user.setActive(false);
+                userRepository.save(user);
+            }
+            teacherRepository.save(teacher);
         }
-        
-        teacherRepository.save(teacher);
     }
 
     @Transactional(readOnly = true)

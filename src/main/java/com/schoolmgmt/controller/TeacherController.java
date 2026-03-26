@@ -70,12 +70,15 @@ public class TeacherController {
     }
 
     @GetMapping
-    @Operation(summary = "Get all teachers", description = "Get paginated list of all teachers")
+    @Operation(summary = "Get all teachers", description = "Get paginated list of all teachers. Use includeDeleted=true to see soft-deleted teachers.")
     @PreAuthorize("hasAnyRole('ADMIN', 'SUPER_ADMIN', 'TEACHER')")
     public ResponseEntity<Page<Teacher>> getAllTeachers(
+            @RequestParam(defaultValue = "false") boolean includeDeleted,
             @PageableDefault(size = 20, sort = "employeeId", direction = Sort.Direction.ASC) Pageable pageable) {
-        log.info("Fetching all teachers");
-        Page<Teacher> teachers = teacherService.getAllTeachers(pageable);
+        log.info("Fetching all teachers (includeDeleted={})", includeDeleted);
+        Page<Teacher> teachers = includeDeleted
+                ? teacherService.getAllTeachersIncludingDeleted(pageable)
+                : teacherService.getAllTeachers(pageable);
         return ResponseEntity.ok(teachers);
     }
 
