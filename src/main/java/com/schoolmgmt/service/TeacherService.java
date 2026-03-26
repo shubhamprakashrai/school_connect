@@ -107,7 +107,7 @@ public class TeacherService {
     @Transactional(readOnly = true)
     public Page<Teacher> getAllTeachers(Pageable pageable) {
         String tenantId = com.schoolmgmt.util.TenantContext.requireCurrentTenant();
-        return teacherRepository.findByTenantId(tenantId, pageable);
+        return teacherRepository.findByTenantIdAndIsDeletedFalse(tenantId, pageable);
     }
 
     @Transactional(readOnly = true)

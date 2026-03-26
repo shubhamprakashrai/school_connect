@@ -42,6 +42,11 @@ public interface TeacherRepository extends JpaRepository<Teacher, UUID>, JpaSpec
     Page<Teacher> findByTenantId(String tenantId, Pageable pageable);
 
     /**
+     * Find non-deleted teachers by tenant ID
+     */
+    Page<Teacher> findByTenantIdAndIsDeletedFalse(String tenantId, Pageable pageable);
+
+    /**
      * Find teachers by department and tenant
      */
     List<Teacher> findByDepartmentAndTenantId(String department, String tenantId);
