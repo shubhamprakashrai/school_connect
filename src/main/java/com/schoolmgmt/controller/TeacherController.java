@@ -2,6 +2,7 @@ package com.schoolmgmt.controller;
 
 import com.schoolmgmt.dto.request.TeacherCreationRequest;
 import com.schoolmgmt.dto.request.TeacherAssignmentRequest;
+import com.schoolmgmt.dto.response.TeacherDropdownResponse;
 import com.schoolmgmt.model.Teacher;
 import com.schoolmgmt.model.TeacherClass;
 import com.schoolmgmt.service.TeacherService;
@@ -33,6 +34,23 @@ import java.util.UUID;
 public class TeacherController {
 
     private final TeacherService teacherService;
+
+    @GetMapping("/dropdown")
+    @Operation(summary = "Get teachers for dropdown", description = "Returns lightweight list of teachers (id, name, email) for dropdowns")
+    @PreAuthorize("hasAnyRole('ADMIN', 'SUPER_ADMIN')")
+    public ResponseEntity<List<TeacherDropdownResponse>> getTeachersForDropdown() {
+        log.info("Fetching teachers for dropdown");
+        List<Teacher> teachers = teacherService.getAllActiveTeachers();
+        List<TeacherDropdownResponse> response = teachers.stream()
+                .map(t -> TeacherDropdownResponse.builder()
+                        .id(t.getId())
+                        .employeeId(t.getEmployeeId())
+                        .fullName(t.getFullName())
+                        .email(t.getEmail())
+                        .build())
+                .toList();
+        return ResponseEntity.ok(response);
+    }
 
     @GetMapping("/next-id")
     @Operation(summary = "Get next employee ID", description = "Returns the next auto-generated employee ID for this school")

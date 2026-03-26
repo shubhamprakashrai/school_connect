@@ -111,6 +111,12 @@ public class TeacherService {
     }
 
     @Transactional(readOnly = true)
+    public List<Teacher> getAllActiveTeachers() {
+        String tenantId = com.schoolmgmt.util.TenantContext.requireCurrentTenant();
+        return teacherRepository.findByStatusAndTenantId(Teacher.TeacherStatus.ACTIVE, tenantId);
+    }
+
+    @Transactional(readOnly = true)
     public Teacher getTeacherById(UUID id) {
         return teacherRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Teacher", "id", id));
