@@ -1,5 +1,6 @@
 package com.schoolmgmt.model;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import lombok.*;
 
@@ -184,6 +185,7 @@ public class Student extends BaseEntity {
     // System User Link
     @OneToOne
     @JoinColumn(name = "user_id", unique = true)
+    @JsonIgnore
     private User user; // Link to user account for login
 
     // Relationships
