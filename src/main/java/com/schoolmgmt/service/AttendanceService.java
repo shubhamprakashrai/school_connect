@@ -3,18 +3,22 @@ package com.schoolmgmt.service;
 import com.schoolmgmt.dto.request.AttendanceMarkingRequest;
 import com.schoolmgmt.exception.BadRequestException;
 import com.schoolmgmt.exception.ResourceNotFoundException;
+import com.schoolmgmt.model.AcademicEvent;
 import com.schoolmgmt.model.Attendance;
 import com.schoolmgmt.model.Student;
 import com.schoolmgmt.model.TeacherClass;
+import com.schoolmgmt.repository.AcademicEventRepository;
 import com.schoolmgmt.repository.AttendanceRepository;
 import com.schoolmgmt.repository.StudentRepository;
 import com.schoolmgmt.repository.TeacherClassRepository;
+import com.schoolmgmt.util.TenantContext;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.DayOfWeek;
 import java.time.LocalDate;
 import java.time.LocalTime;
 import java.util.*;
@@ -27,6 +31,7 @@ public class AttendanceService {
     private final AttendanceRepository attendanceRepository;
     private final StudentRepository studentRepository;
     private final TeacherClassRepository teacherClassRepository;
+    private final AcademicEventRepository academicEventRepository;
 
     @Transactional
     public Attendance markAttendance(AttendanceMarkingRequest request) {
@@ -99,7 +104,6 @@ public class AttendanceService {
 
         List<Attendance> attendanceRecords = getAttendanceByDateRange(studentId, startDate, endDate);
 
-        long totalDays = attendanceRecords.size();
         long presentDays = 0;
         long absentDays = 0;
         long lateDays = 0;
@@ -114,7 +118,27 @@ public class AttendanceService {
             }
         }
 
-        double attendancePercentage = totalDays > 0 ? (double) presentDays / totalDays * 100 : 0.0;
+        // Calculate actual working days by subtracting holidays from weekdays
+        long totalWeekdays = countWeekdays(startDate, endDate);
+        long holidayDays = 0;
+
+        String tenantId = TenantContext.getCurrentTenant();
+        if (tenantId != null) {
+            List<AcademicEvent> holidays = academicEventRepository.findByTenantIdAndDateRange(
+                    tenantId, startDate, endDate);
+            for (AcademicEvent event : holidays) {
+                if (event.getEventType() == AcademicEvent.EventType.HOLIDAY) {
+                    // Clamp holiday range to the query date range
+                    LocalDate holidayStart = event.getStartDate().isBefore(startDate) ? startDate : event.getStartDate();
+                    LocalDate holidayEnd = event.getEndDate().isAfter(endDate) ? endDate : event.getEndDate();
+                    holidayDays += countWeekdays(holidayStart, holidayEnd);
+                }
+            }
+        }
+
+        long workingDays = totalWeekdays - holidayDays;
+        long totalDays = workingDays; // backward compatibility
+        double attendancePercentage = workingDays > 0 ? (double) presentDays / workingDays * 100 : 0.0;
 
         Map<String, Object> stats = new HashMap<>();
         stats.put("studentId", studentId);
@@ -124,9 +148,26 @@ public class AttendanceService {
         stats.put("presentDays", presentDays);
         stats.put("absentDays", absentDays);
         stats.put("lateDays", lateDays);
+        stats.put("workingDays", workingDays);
+        stats.put("holidayDays", holidayDays);
         stats.put("attendancePercentage", Math.round(attendancePercentage * 100.0) / 100.0);
 
         return stats;
+    }
+
+    /**
+     * Count weekdays (Monday through Saturday) between two dates, inclusive.
+     */
+    private long countWeekdays(LocalDate start, LocalDate end) {
+        long count = 0;
+        LocalDate date = start;
+        while (!date.isAfter(end)) {
+            if (date.getDayOfWeek() != DayOfWeek.SUNDAY) {
+                count++;
+            }
+            date = date.plusDays(1);
+        }
+        return count;
     }
 
     @Transactional
