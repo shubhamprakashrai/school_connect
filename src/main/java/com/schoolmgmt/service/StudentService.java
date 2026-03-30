@@ -387,8 +387,18 @@ public class StudentService {
         User savedUser = userRepository.save(user);
         
         // Send welcome email with credentials
-        // emailService.sendStudentCredentials(student, username, defaultPassword);
-        
+        if (student.getEmail() != null) {
+            try {
+                String schoolName = tenantRepository.findByIdentifier(TenantContext.getCurrentTenant())
+                        .map(Tenant::getName).orElse("School Connect");
+                emailService.sendStudentCredentials(
+                        student.getEmail(), student.getFirstName(),
+                        student.getRollNumber(), username, defaultPassword, schoolName);
+            } catch (Exception e) {
+                log.warn("Failed to send student credentials email to: {}", student.getEmail(), e);
+            }
+        }
+
         return savedUser;
     }
 

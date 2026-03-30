@@ -113,6 +113,43 @@ public class EmailService {
     }
     
     /**
+     * Send teacher credentials email
+     */
+    @Async
+    public void sendTeacherCredentials(String email, String firstName, String employeeId, String tempPassword, String schoolName) {
+        String subject = "Your Teacher Account - " + appName;
+
+        Map<String, Object> variables = new HashMap<>();
+        variables.put("userName", firstName);
+        variables.put("appName", appName);
+        variables.put("employeeId", employeeId);
+        variables.put("tempPassword", tempPassword);
+        variables.put("loginUrl", frontendUrl + "/login");
+        variables.put("schoolName", schoolName);
+
+        sendHtmlEmail(email, subject, "teacher-credentials", variables);
+    }
+
+    /**
+     * Send student credentials email
+     */
+    @Async
+    public void sendStudentCredentials(String email, String firstName, String rollNumber, String username, String tempPassword, String schoolName) {
+        String subject = "Your Student Account - " + appName;
+
+        Map<String, Object> variables = new HashMap<>();
+        variables.put("userName", firstName);
+        variables.put("appName", appName);
+        variables.put("rollNumber", rollNumber);
+        variables.put("username", username);
+        variables.put("tempPassword", tempPassword);
+        variables.put("loginUrl", frontendUrl + "/login");
+        variables.put("schoolName", schoolName);
+
+        sendHtmlEmail(email, subject, "student-credentials", variables);
+    }
+
+    /**
      * Send simple text email
      */
     @Async
@@ -188,6 +225,21 @@ public class EmailService {
                 case "account-locked":
                     text.append("Your account has been locked due to multiple failed login attempts.");
                     text.append("\n\nIt will be automatically unlocked after ").append(variables.get("lockDuration")).append(" minutes.");
+                    break;
+                case "teacher-credentials":
+                    text.append("Your teacher account has been created at ").append(variables.get("schoolName")).append(".\n\n");
+                    text.append("Employee ID: ").append(variables.get("employeeId")).append("\n");
+                    text.append("Temporary Password: ").append(variables.get("tempPassword")).append("\n");
+                    text.append("Login at: ").append(variables.get("loginUrl")).append("\n\n");
+                    text.append("Please change your password after first login.");
+                    break;
+                case "student-credentials":
+                    text.append("Your student account has been created at ").append(variables.get("schoolName")).append(".\n\n");
+                    text.append("Roll Number: ").append(variables.get("rollNumber")).append("\n");
+                    text.append("Username: ").append(variables.get("username")).append("\n");
+                    text.append("Temporary Password: ").append(variables.get("tempPassword")).append("\n");
+                    text.append("Login at: ").append(variables.get("loginUrl")).append("\n\n");
+                    text.append("Please change your password after first login.");
                     break;
                 default:
                     text.append("You have a new notification from ").append(appName).append(".");

@@ -8,6 +8,8 @@ import com.schoolmgmt.repository.*;
 import com.schoolmgmt.util.TenantContext;
 import com.schoolmgmt.util.TenantIdFormatter;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -19,6 +21,7 @@ import java.util.UUID;
 
 @Service
 @RequiredArgsConstructor
+@Slf4j
 public class TeacherService {
 
     private final UserRepository userRepository;
@@ -29,6 +32,10 @@ public class TeacherService {
     private final TeacherClassRepository teacherClassRepository;
     private final TenantRepository tenantRepository;
     private final PasswordEncoder passwordEncoder;
+    private final EmailService emailService;
+
+    @Value("${app.name:School Connect}")
+    private String appName;
 
     public String generateNextEmployeeId() {
         String tenantId = TenantContext.getCurrentTenant();
@@ -45,14 +52,16 @@ public class TeacherService {
         // In a real app, you'd also check if the email is already taken for the current tenant.
 
         // 1. Create the User account for authentication.
-        // A temporary password can be generated and sent via email.
+        String tempPassword = UUID.randomUUID().toString().substring(0, 8);
+
         User user = User.builder()
                 .firstName(request.getFirstName())
                 .lastName(request.getLastName())
                 .email(request.getEmail())
-                .password(passwordEncoder.encode(UUID.randomUUID().toString())) // Generate a secure random password
+                .password(passwordEncoder.encode(tempPassword))
                 .role(User.UserRole.TEACHER)
                 .isActive(true)
+                .tempPasswordForFirstTime(tempPassword)
                 .build();
         User savedUser = userRepository.save(user);
 
@@ -72,9 +81,20 @@ public class TeacherService {
                 .user(savedUser) // Link the profile to the user account
                 .build();
 
-        // In a real app, you would send a welcome email to the teacher with their login details.
+        Teacher savedTeacher = teacherRepository.save(teacher);
 
-        return teacherRepository.save(teacher);
+        // Send credentials email to the teacher
+        try {
+            String schoolName = tenantRepository.findByIdentifier(TenantContext.getCurrentTenant())
+                    .map(Tenant::getName).orElse(appName);
+            emailService.sendTeacherCredentials(
+                    savedTeacher.getEmail(), savedTeacher.getFirstName(),
+                    savedTeacher.getEmployeeId(), tempPassword, schoolName);
+        } catch (Exception e) {
+            log.warn("Failed to send teacher credentials email to: {}", savedTeacher.getEmail(), e);
+        }
+
+        return savedTeacher;
     }
 
     @Transactional
