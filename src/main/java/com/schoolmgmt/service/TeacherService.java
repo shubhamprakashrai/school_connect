@@ -164,7 +164,7 @@ public class TeacherService {
         Teacher teacher = teacherRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Teacher", "id", id));
 
-        if (teacher.isDeleted()) {
+        if (Boolean.TRUE.equals(teacher.getIsDeleted())) {
             // Already soft-deleted → hard delete
             if (teacher.getUser() != null) {
                 userRepository.delete(teacher.getUser());
