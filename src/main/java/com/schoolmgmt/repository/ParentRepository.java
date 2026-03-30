@@ -153,6 +153,11 @@ public interface ParentRepository extends JpaRepository<Parent, UUID>, JpaSpecif
     List<Object[]> getParentStatisticsByType(@Param("tenantId") String tenantId);
 
     /**
+     * Find parent by user ID
+     */
+    Optional<Parent> findByUserIdAndTenantId(UUID userId, String tenantId);
+
+    /**
      * Find parents without portal access
      */
     @Query("SELECT p FROM Parent p WHERE p.tenantId = :tenantId AND " +
