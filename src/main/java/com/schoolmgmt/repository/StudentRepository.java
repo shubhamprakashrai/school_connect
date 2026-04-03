@@ -117,4 +117,15 @@ public interface StudentRepository extends JpaRepository<Student, UUID>, JpaSpec
            "GROUP BY s.currentClassId")
     List<Object[]> getStudentStatisticsByClass(@Param("tenantId") String tenantId);
 
+    /**
+     * Find active student IDs by tenant for billing purposes
+     */
+    @Query("SELECT s.id FROM Student s WHERE s.tenantId = :tenantId AND (s.isDeleted = false OR s.isDeleted IS NULL)")
+    List<UUID> findActiveStudentIdsByTenantId(@Param("tenantId") String tenantId);
+
+    /**
+     * Count non-deleted students by tenant
+     */
+    long countByTenantIdAndIsDeletedFalse(String tenantId);
+
 }
