@@ -1,5 +1,6 @@
 package com.schoolmgmt.security;
 
+import com.schoolmgmt.interceptor.SubscriptionInterceptor;
 import com.schoolmgmt.util.TenantCleanupFilter;
 import com.schoolmgmt.util.TenantInterceptor;
 import lombok.RequiredArgsConstructor;
@@ -45,6 +46,7 @@ public class SecurityConfig implements WebMvcConfigurer {
     private final JwtAuthenticationEntryPoint jwtAuthenticationEntryPoint;
     private final TenantInterceptor tenantInterceptor;
     private final TenantCleanupFilter tenantCleanupFilter;
+    private final SubscriptionInterceptor subscriptionInterceptor;
 
     @Value("${cors.allowed-origins}")
     private String[] allowedOrigins;
@@ -75,6 +77,7 @@ public class SecurityConfig implements WebMvcConfigurer {
             "/auth/resend-verification",
             "/public/**",
             "/tenants/register",
+            "/webhooks/**",
 
             "/v3/api-docs/**",
             "/swagger-ui/**",
@@ -128,6 +131,9 @@ public class SecurityConfig implements WebMvcConfigurer {
     @Override
     public void addInterceptors(InterceptorRegistry registry) {
         registry.addInterceptor(tenantInterceptor)
+                .addPathPatterns("/**")
+                .excludePathPatterns(PUBLIC_URLS);
+        registry.addInterceptor(subscriptionInterceptor)
                 .addPathPatterns("/**")
                 .excludePathPatterns(PUBLIC_URLS);
     }
