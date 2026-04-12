@@ -121,3 +121,9 @@ coverage/
 # Package lock files (if using npm for any frontend)
 package-lock.json
 yarn.lock
+
+# Local secrets — never commit
+*.credentials
+credentials.env
+.env.credentials
+.env.local

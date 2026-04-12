@@ -38,20 +38,29 @@ public class TransportRoute implements TenantAware {
     @Column(name = "route_name", nullable = false, length = 200)
     private String routeName;
 
-    @Column(name = "route_number", nullable = false, length = 50)
+    @Column(name = "route_number", length = 50)
     private String routeNumber;
 
-    @Column(name = "start_point", nullable = false, length = 300)
+    @Column(name = "start_point", length = 300)
     private String startPoint;
 
-    @Column(name = "end_point", nullable = false, length = 300)
+    @Column(name = "end_point", length = 300)
     private String endPoint;
 
-    @ElementCollection
+    @ElementCollection(fetch = FetchType.EAGER)
     @CollectionTable(name = "transport_route_stops", joinColumns = @JoinColumn(name = "route_id"))
     @Column(name = "stop_name")
     @Builder.Default
     private List<String> stops = new ArrayList<>();
+
+    @Column(name = "start_time", length = 20)
+    private String startTime;
+
+    @Column(name = "end_time", length = 20)
+    private String endTime;
+
+    @Column(name = "distance")
+    private Double distance;
 
     @Column(name = "driver_name", length = 200)
     private String driverName;
@@ -59,7 +68,7 @@ public class TransportRoute implements TenantAware {
     @Column(name = "driver_phone", length = 20)
     private String driverPhone;
 
-    @Column(name = "vehicle_number", nullable = false, length = 50)
+    @Column(name = "vehicle_number", length = 50)
     private String vehicleNumber;
 
     @Column(name = "vehicle_type", length = 50)

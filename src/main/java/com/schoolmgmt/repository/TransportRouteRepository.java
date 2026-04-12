@@ -17,4 +17,8 @@ public interface TransportRouteRepository extends JpaRepository<TransportRoute, 
     List<TransportRoute> findByIsActiveAndTenantId(Boolean isActive, String tenantId);
 
     List<TransportRoute> findByRouteNameContainingIgnoreCaseAndTenantId(String name, String tenantId);
+
+    long countByTenantId(String tenantId);
+
+    boolean existsByTenantIdAndRouteNumber(String tenantId, String routeNumber);
 }

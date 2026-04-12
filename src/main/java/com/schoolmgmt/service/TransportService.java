@@ -25,19 +25,40 @@ public class TransportService {
     public TransportRoute createRoute(TransportRoute route) {
         String tenantId = TenantContext.getCurrentTenant();
         route.setTenantId(tenantId);
-        log.info("Creating transport route: {} for tenant: {}", route.getRouteName(), tenantId);
+        if (route.getRouteNumber() == null || route.getRouteNumber().isBlank()) {
+            route.setRouteNumber(generateNextRouteNumber(tenantId));
+        }
+        log.info("Creating transport route: {} ({}) for tenant: {}",
+                route.getRouteName(), route.getRouteNumber(), tenantId);
         return transportRouteRepository.save(route);
+    }
+
+    /** Generates next available route number per tenant: R001, R002, … */
+    private String generateNextRouteNumber(String tenantId) {
+        long base = transportRouteRepository.countByTenantId(tenantId) + 1;
+        String candidate = String.format("R%03d", base);
+        // Skip collisions in case of gaps / concurrent inserts.
+        while (transportRouteRepository.existsByTenantIdAndRouteNumber(tenantId, candidate)) {
+            base++;
+            candidate = String.format("R%03d", base);
+        }
+        return candidate;
     }
 
     @Transactional
     public TransportRoute updateRoute(UUID routeId, TransportRoute updated) {
+        String tenantId = TenantContext.getCurrentTenant();
         TransportRoute existing = transportRouteRepository.findById(routeId)
+                .filter(r -> tenantId.equals(r.getTenantId()))
                 .orElseThrow(() -> new NoSuchElementException("Transport route not found: " + routeId));
 
         if (updated.getRouteName() != null) existing.setRouteName(updated.getRouteName());
         if (updated.getRouteNumber() != null) existing.setRouteNumber(updated.getRouteNumber());
         if (updated.getStartPoint() != null) existing.setStartPoint(updated.getStartPoint());
         if (updated.getEndPoint() != null) existing.setEndPoint(updated.getEndPoint());
+        if (updated.getStartTime() != null) existing.setStartTime(updated.getStartTime());
+        if (updated.getEndTime() != null) existing.setEndTime(updated.getEndTime());
+        if (updated.getDistance() != null) existing.setDistance(updated.getDistance());
         if (updated.getStops() != null) existing.setStops(updated.getStops());
         if (updated.getDriverName() != null) existing.setDriverName(updated.getDriverName());
         if (updated.getDriverPhone() != null) existing.setDriverPhone(updated.getDriverPhone());
@@ -52,7 +73,11 @@ public class TransportService {
 
     @Transactional
     public void deleteRoute(UUID routeId) {
-        transportRouteRepository.deleteById(routeId);
+        String tenantId = TenantContext.getCurrentTenant();
+        TransportRoute existing = transportRouteRepository.findById(routeId)
+                .filter(r -> tenantId.equals(r.getTenantId()))
+                .orElseThrow(() -> new NoSuchElementException("Transport route not found: " + routeId));
+        transportRouteRepository.delete(existing);
     }
 
     @Transactional(readOnly = true)
@@ -63,7 +88,9 @@ public class TransportService {
 
     @Transactional(readOnly = true)
     public TransportRoute getRouteById(UUID routeId) {
+        String tenantId = TenantContext.getCurrentTenant();
         return transportRouteRepository.findById(routeId)
+                .filter(r -> tenantId.equals(r.getTenantId()))
                 .orElseThrow(() -> new NoSuchElementException("Transport route not found: " + routeId));
     }
 
