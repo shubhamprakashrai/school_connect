@@ -72,6 +72,18 @@ public class RoleController {
         return ResponseEntity.noContent().build();
     }
 
+    /**
+     * Idempotent backfill — creates the default starter roles for the
+     * current tenant if absent. New tenants get this for free during
+     * onboarding; existing tenants can hit this once to populate.
+     */
+    @PostMapping("/roles/seed-defaults")
+    @RequirePermission(Permission.ROLES_MANAGE)
+    public ResponseEntity<Map<String, Integer>> seedDefaults() {
+        int created = permissionService.seedDefaultRolesForCurrentTenant();
+        return ResponseEntity.ok(Map.of("created", created));
+    }
+
     // ── User role/permission assignment ────────────────────────────────
     @PutMapping("/users/{userId}/custom-role")
     @RequirePermission(Permission.USER_PERMISSIONS_MANAGE)

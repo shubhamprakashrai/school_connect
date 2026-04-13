@@ -4,6 +4,7 @@ import com.schoolmgmt.model.CustomRole;
 import com.schoolmgmt.model.User;
 import com.schoolmgmt.repository.CustomRoleRepository;
 import com.schoolmgmt.repository.UserRepository;
+import com.schoolmgmt.security.DefaultTenantRoles;
 import com.schoolmgmt.security.Permission;
 import com.schoolmgmt.util.TenantContext;
 import lombok.RequiredArgsConstructor;
@@ -172,9 +173,8 @@ public class PermissionService {
     public CustomRole updateRole(UUID id, String name, String description, Set<String> perms) {
         if (perms != null) Permission.validate(perms);
         CustomRole role = getRole(id);
-        if (Boolean.TRUE.equals(role.getIsSystem())) {
-            throw new IllegalArgumentException("System roles cannot be modified");
-        }
+        // Default (seeded) roles are fully editable — the {@code isSystem}
+        // flag now only drives a UI badge, not any restriction.
         if (name != null) role.setName(name);
         if (description != null) role.setDescription(description);
         if (perms != null) {
@@ -187,11 +187,38 @@ public class PermissionService {
     @Transactional
     public void deleteRole(UUID id) {
         CustomRole role = getRole(id);
-        if (Boolean.TRUE.equals(role.getIsSystem())) {
-            throw new IllegalArgumentException("System roles cannot be deleted");
-        }
         role.softDelete("system");
         customRoleRepository.save(role);
+    }
+
+    /**
+     * Seed the default role catalog for the current tenant. Idempotent —
+     * existing roles with the same name are left alone. Meant to be called
+     * once during tenant onboarding and (optionally) as a backfill.
+     *
+     * Requires {@link TenantContext#getCurrentTenant()} to point at the
+     * target tenant before invocation.
+     */
+    @Transactional
+    public int seedDefaultRolesForCurrentTenant() {
+        String tenantId = TenantContext.requireCurrentTenant();
+        int created = 0;
+        for (var seed : DefaultTenantRoles.seeds()) {
+            if (customRoleRepository
+                .existsByTenantIdAndNameIgnoreCase(tenantId, seed.name())) {
+                continue;
+            }
+            CustomRole role = CustomRole.builder()
+                .name(seed.name())
+                .description(seed.description())
+                .permissions(new HashSet<>(seed.permissions()))
+                .isSystem(true)
+                .build();
+            customRoleRepository.save(role);
+            created++;
+        }
+        log.info("Seeded {} default roles for tenant {}", created, tenantId);
+        return created;
     }
 
     /** Assign / clear a custom role for a user (tenant-isolated). */

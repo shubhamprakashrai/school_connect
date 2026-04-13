@@ -43,6 +43,7 @@ public class SuperAdminTenantService {
     private final EmailService emailService;
     private final ClassSectionService classSectionService;
     private final MasterDataService masterDataService;
+    private final PermissionService permissionService;
 
     /**
      * Create a new tenant as SuperAdmin
