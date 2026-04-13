@@ -93,6 +93,7 @@ public class ExamService {
     @Transactional(readOnly = true)
     public Exam getExamById(UUID examId) {
         return examRepository.findById(examId)
+                .filter(__x -> com.schoolmgmt.util.TenantContext.getCurrentTenant().equals(__x.getTenantId()))
                 .orElseThrow(() -> new NoSuchElementException("Exam not found: " + examId));
     }
 

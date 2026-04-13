@@ -173,6 +173,7 @@ public class AttendanceService {
     @Transactional
     public Attendance updateAttendance(UUID id, AttendanceMarkingRequest request) {
         Attendance attendance = attendanceRepository.findById(id)
+                .filter(__x -> com.schoolmgmt.util.TenantContext.getCurrentTenant().equals(__x.getTenantId()))
                 .orElseThrow(() -> new ResourceNotFoundException("Attendance", "id", id));
 
         attendance.setStatus(request.getStatus());
@@ -185,6 +186,7 @@ public class AttendanceService {
     @Transactional
     public void deleteAttendance(UUID id) {
         Attendance attendance = attendanceRepository.findById(id)
+                .filter(__x -> com.schoolmgmt.util.TenantContext.getCurrentTenant().equals(__x.getTenantId()))
                 .orElseThrow(() -> new ResourceNotFoundException("Attendance", "id", id));
         
         attendanceRepository.delete(attendance);

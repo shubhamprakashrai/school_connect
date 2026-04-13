@@ -33,6 +33,7 @@ public class AnnouncementService {
     @Transactional
     public Announcement update(UUID id, Announcement updated) {
         Announcement existing = announcementRepository.findById(id)
+                .filter(__x -> com.schoolmgmt.util.TenantContext.getCurrentTenant().equals(__x.getTenantId()))
                 .orElseThrow(() -> new NoSuchElementException("Announcement not found: " + id));
 
         if (updated.getTitle() != null) existing.setTitle(updated.getTitle());
@@ -59,6 +60,7 @@ public class AnnouncementService {
     @Transactional(readOnly = true)
     public Announcement getById(UUID id) {
         return announcementRepository.findById(id)
+                .filter(__x -> com.schoolmgmt.util.TenantContext.getCurrentTenant().equals(__x.getTenantId()))
                 .orElseThrow(() -> new NoSuchElementException("Announcement not found: " + id));
     }
 

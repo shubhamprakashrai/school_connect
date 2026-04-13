@@ -38,6 +38,7 @@ public class GalleryService {
     @Transactional
     public Album updateAlbum(UUID albumId, Album updated) {
         Album existing = albumRepository.findById(albumId)
+                .filter(__x -> com.schoolmgmt.util.TenantContext.getCurrentTenant().equals(__x.getTenantId()))
                 .orElseThrow(() -> new NoSuchElementException("Album not found: " + albumId));
 
         if (updated.getTitle() != null) existing.setTitle(updated.getTitle());
@@ -64,6 +65,7 @@ public class GalleryService {
     @Transactional(readOnly = true)
     public Album getAlbumById(UUID albumId) {
         return albumRepository.findById(albumId)
+                .filter(__x -> com.schoolmgmt.util.TenantContext.getCurrentTenant().equals(__x.getTenantId()))
                 .orElseThrow(() -> new NoSuchElementException("Album not found: " + albumId));
     }
 
@@ -81,6 +83,7 @@ public class GalleryService {
 
         // Update album photo count
         Album album = albumRepository.findById(albumId)
+                .filter(__x -> com.schoolmgmt.util.TenantContext.getCurrentTenant().equals(__x.getTenantId()))
                 .orElseThrow(() -> new NoSuchElementException("Album not found: " + albumId));
         Long count = photoRepository.countByAlbumIdAndTenantId(albumId, tenantId);
         album.setPhotoCount(count.intValue());
@@ -100,6 +103,7 @@ public class GalleryService {
 
         // Update album photo count
         Album album = albumRepository.findById(albumId)
+                .filter(__x -> com.schoolmgmt.util.TenantContext.getCurrentTenant().equals(__x.getTenantId()))
                 .orElseThrow(() -> new NoSuchElementException("Album not found: " + albumId));
         Long count = photoRepository.countByAlbumIdAndTenantId(albumId, tenantId);
         album.setPhotoCount(count.intValue());

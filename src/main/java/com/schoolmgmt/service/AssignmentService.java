@@ -64,6 +64,7 @@ public class AssignmentService {
     @Transactional
     public AssignmentResponse updateAssignment(UUID assignmentId, UpdateAssignmentRequest request) {
         Assignment existing = assignmentRepository.findById(assignmentId)
+                .filter(__x -> com.schoolmgmt.util.TenantContext.getCurrentTenant().equals(__x.getTenantId()))
                 .orElseThrow(() -> new NoSuchElementException("Assignment not found: " + assignmentId));
 
         if (request.getTitle() != null) existing.setTitle(request.getTitle());
@@ -89,6 +90,7 @@ public class AssignmentService {
     @Transactional(readOnly = true)
     public AssignmentResponse getAssignmentById(UUID assignmentId) {
         Assignment assignment = assignmentRepository.findById(assignmentId)
+                .filter(__x -> com.schoolmgmt.util.TenantContext.getCurrentTenant().equals(__x.getTenantId()))
                 .orElseThrow(() -> new NoSuchElementException("Assignment not found: " + assignmentId));
         return toResponse(assignment);
     }
@@ -132,6 +134,7 @@ public class AssignmentService {
 
         // Check if assignment exists
         Assignment assignment = assignmentRepository.findById(assignmentId)
+                .filter(__x -> com.schoolmgmt.util.TenantContext.getCurrentTenant().equals(__x.getTenantId()))
                 .orElseThrow(() -> new NoSuchElementException("Assignment not found: " + assignmentId));
 
         UUID studentId = UUID.fromString(request.getStudentId());
@@ -172,6 +175,7 @@ public class AssignmentService {
     @Transactional
     public AssignmentSubmissionResponse gradeSubmission(UUID submissionId, GradeSubmissionRequest request) {
         AssignmentSubmission submission = submissionRepository.findById(submissionId)
+                .filter(__x -> com.schoolmgmt.util.TenantContext.getCurrentTenant().equals(__x.getTenantId()))
                 .orElseThrow(() -> new NoSuchElementException("Submission not found: " + submissionId));
 
         submission.setMarksObtained(request.getMarksObtained());

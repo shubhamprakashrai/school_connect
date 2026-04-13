@@ -41,6 +41,7 @@ public class HostelService {
     public Hostel getHostelById(UUID id) {
         String tenantId = TenantContext.requireCurrentTenant();
         Hostel hostel = hostelRepository.findById(id)
+                .filter(__x -> com.schoolmgmt.util.TenantContext.getCurrentTenant().equals(__x.getTenantId()))
                 .orElseThrow(() -> new ResourceNotFoundException("Hostel", "id", id));
         if (!hostel.getTenantId().equals(tenantId)) {
             throw new ResourceNotFoundException("Hostel", "id", id);

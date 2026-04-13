@@ -118,6 +118,7 @@ public class LeaveService {
     @Transactional
     public LeaveRequest approveLeave(UUID id, String approvedBy, String approvedByName, String remarks) {
         LeaveRequest request = leaveRequestRepository.findById(id)
+                .filter(__x -> com.schoolmgmt.util.TenantContext.getCurrentTenant().equals(__x.getTenantId()))
                 .orElseThrow(() -> new NoSuchElementException("Leave request not found: " + id));
 
         if (request.getStatus() != LeaveRequest.LeaveStatus.PENDING) {
@@ -140,6 +141,7 @@ public class LeaveService {
     @Transactional
     public LeaveRequest rejectLeave(UUID id, String rejectedBy, String rejectedByName, String remarks) {
         LeaveRequest request = leaveRequestRepository.findById(id)
+                .filter(__x -> com.schoolmgmt.util.TenantContext.getCurrentTenant().equals(__x.getTenantId()))
                 .orElseThrow(() -> new NoSuchElementException("Leave request not found: " + id));
 
         if (request.getStatus() != LeaveRequest.LeaveStatus.PENDING) {
@@ -159,6 +161,7 @@ public class LeaveService {
     @Transactional
     public LeaveRequest cancelLeave(UUID id) {
         LeaveRequest request = leaveRequestRepository.findById(id)
+                .filter(__x -> com.schoolmgmt.util.TenantContext.getCurrentTenant().equals(__x.getTenantId()))
                 .orElseThrow(() -> new NoSuchElementException("Leave request not found: " + id));
 
         if (request.getStatus() == LeaveRequest.LeaveStatus.APPROVED) {

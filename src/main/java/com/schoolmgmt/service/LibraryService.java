@@ -38,6 +38,7 @@ public class LibraryService {
     @Transactional
     public Book updateBook(UUID id, Book updated) {
         Book existing = bookRepository.findById(id)
+                .filter(__x -> com.schoolmgmt.util.TenantContext.getCurrentTenant().equals(__x.getTenantId()))
                 .orElseThrow(() -> new NoSuchElementException("Book not found: " + id));
 
         if (updated.getTitle() != null) existing.setTitle(updated.getTitle());
@@ -67,6 +68,7 @@ public class LibraryService {
     @Transactional(readOnly = true)
     public Book getBookById(UUID id) {
         return bookRepository.findById(id)
+                .filter(__x -> com.schoolmgmt.util.TenantContext.getCurrentTenant().equals(__x.getTenantId()))
                 .orElseThrow(() -> new NoSuchElementException("Book not found: " + id));
     }
 
@@ -100,6 +102,7 @@ public class LibraryService {
     @Transactional
     public BookIssue returnBook(UUID issueId) {
         BookIssue issue = bookIssueRepository.findById(issueId)
+                .filter(__x -> com.schoolmgmt.util.TenantContext.getCurrentTenant().equals(__x.getTenantId()))
                 .orElseThrow(() -> new NoSuchElementException("Book issue not found: " + issueId));
 
         issue.setStatus(BookIssue.BookIssueStatus.RETURNED);
