@@ -144,13 +144,17 @@ public class TeacherService {
 
     @Transactional(readOnly = true)
     public Teacher getTeacherById(UUID id) {
+        String tenantId = com.schoolmgmt.util.TenantContext.requireCurrentTenant();
         return teacherRepository.findById(id)
+                .filter(t -> tenantId.equals(t.getTenantId()))
                 .orElseThrow(() -> new ResourceNotFoundException("Teacher", "id", id));
     }
 
     @Transactional(readOnly = true)
     public Teacher getTeacherByEmployeeId(String employeeId) {
+        String tenantId = com.schoolmgmt.util.TenantContext.requireCurrentTenant();
         return teacherRepository.findByEmployeeId(employeeId)
+                .filter(t -> tenantId.equals(t.getTenantId()))
                 .orElseThrow(() -> new ResourceNotFoundException("Teacher", "employeeId", employeeId));
     }
 
@@ -181,8 +185,7 @@ public class TeacherService {
 
     @Transactional
     public void deleteTeacher(UUID id) {
-        Teacher teacher = teacherRepository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("Teacher", "id", id));
+        Teacher teacher = getTeacherById(id);
 
         if (Boolean.TRUE.equals(teacher.getIsDeleted())) {
             // Already soft-deleted → hard delete
