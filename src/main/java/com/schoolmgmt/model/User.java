@@ -119,6 +119,22 @@ public class User extends BaseEntity implements UserDetails, TenantAware {
     @Column(name = "tempPasswordForFirstTime")
     private String tempPasswordForFirstTime;
 
+    // ── Dynamic RBAC (tenant-scoped) ───────────────────────────────────
+    // Optional custom role override. When null the user inherits system-
+    // role defaults. When set, effective perms = customRole.permissions
+    // ∪ additionalPermissions ∪ system defaults for the base {@code role}.
+    @Column(name = "custom_role_id")
+    private java.util.UUID customRoleId;
+
+    @ElementCollection(fetch = FetchType.EAGER)
+    @CollectionTable(
+        name = "user_additional_permissions",
+        joinColumns = @JoinColumn(name = "user_id")
+    )
+    @Column(name = "permission_key", length = 80)
+    @Builder.Default
+    private java.util.Set<String> additionalPermissions = new java.util.HashSet<>();
+
     // We can add ParentProfile later
 
     public enum UserRole {
