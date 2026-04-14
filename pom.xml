@@ -226,6 +226,13 @@
             <scope>runtime</scope>
             <optional>true</optional>
         </dependency>
+
+        <!-- Image processing: resize, re-compress, strip EXIF -->
+        <dependency>
+            <groupId>net.coobird</groupId>
+            <artifactId>thumbnailator</artifactId>
+            <version>0.4.20</version>
+        </dependency>
     </dependencies>
 
     <build>

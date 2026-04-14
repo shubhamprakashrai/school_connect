@@ -6,6 +6,7 @@ import com.schoolmgmt.model.FileEntity;
 import com.schoolmgmt.model.User;
 import com.schoolmgmt.repository.FileRepository;
 import com.schoolmgmt.service.FileStorageService;
+import com.schoolmgmt.service.LocalFileStorageService;
 import com.schoolmgmt.util.TenantContext;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -129,20 +130,31 @@ public class FileController {
     }
 
     @GetMapping("/{id}/download")
-    @Operation(summary = "Download a file")
+    @Operation(summary = "Download a file (optional ?variant=thumb for image thumbnail)")
     @PreAuthorize("isAuthenticated()")
-    public ResponseEntity<Resource> downloadFile(@PathVariable UUID id) {
+    public ResponseEntity<Resource> downloadFile(
+            @PathVariable UUID id,
+            @RequestParam(required = false) String variant) {
         String tenantId = TenantContext.getCurrentTenant();
         FileEntity fileEntity = fileRepository.findByIdAndTenantId(id, tenantId)
                 .orElseThrow(() -> new RuntimeException("File not found"));
 
-        Resource resource = fileStorageService.load(fileEntity.getStoragePath());
+        Resource resource;
+        if (variant != null && fileStorageService instanceof LocalFileStorageService local) {
+            resource = local.loadVariant(fileEntity.getStoragePath(), variant);
+        } else {
+            resource = fileStorageService.load(fileEntity.getStoragePath());
+        }
+
+        // Thumbnails are inline-viewed; keep original as attachment.
+        String disposition = "thumb".equalsIgnoreCase(variant) ? "inline" : "attachment";
 
         return ResponseEntity.ok()
                 .contentType(MediaType.parseMediaType(
                         fileEntity.getContentType() != null ? fileEntity.getContentType() : "application/octet-stream"))
                 .header(HttpHeaders.CONTENT_DISPOSITION,
-                        "attachment; filename=\"" + fileEntity.getOriginalName() + "\"")
+                        disposition + "; filename=\"" + fileEntity.getOriginalName() + "\"")
+                .header(HttpHeaders.CACHE_CONTROL, "private, max-age=604800")
                 .body(resource);
     }
 
