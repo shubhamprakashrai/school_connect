@@ -116,3 +116,4 @@ coverage/
 # Package lock files (if using npm for any frontend)
 package-lock.json
 yarn.lock
+school-mgmt.tar
