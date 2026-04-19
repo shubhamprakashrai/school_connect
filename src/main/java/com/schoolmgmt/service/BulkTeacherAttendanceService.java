@@ -292,7 +292,7 @@ public class BulkTeacherAttendanceService {
         int successfulInDepartment = 0;
         int failedInDepartment = 0;
         
-        log.info("Processing {} teachers for department: {}", departmentTeachers.size(), departmentKey);
+        log.info("Processing {} teachers for department: {}", String.valueOf(departmentTeachers.size()), departmentKey);
         
         for (ValidatedTeacherAttendanceRequest validatedTeacher : departmentTeachers) {
             String teacherIdentifier = getTeacherIdentifier(validatedTeacher.getOriginalRequest());

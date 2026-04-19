@@ -41,7 +41,7 @@ public class ParentPortalController {
         
         List<StudentResponse> students = parentPortalService.getMyStudents();
         
-        log.info("Returning {} students for parent", students.size());
+        log.info("Returning {} students for parent", String.valueOf(students.size()));
         
         return ResponseEntity.ok(students);
     }

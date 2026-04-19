@@ -9,7 +9,10 @@ import org.springframework.security.core.userdetails.UserDetails;
 
 import java.util.Collection;
 import java.util.List;
+import java.util.Set;
+import java.util.HashSet;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 /**
  * Central entity for all application users, handling authentication and authorization.
@@ -38,9 +41,9 @@ public class User extends BaseEntity implements UserDetails, TenantAware {
     @Column(name = "last_name", nullable = false)
     private String lastName;
 
-    @Enumerated(EnumType.STRING)
-    @Column(name = "role", nullable = false, length = 20)
-    private UserRole role;
+    @Convert(converter = UserRoleSetConverter.class)
+    @Column(name = "role", nullable = false, columnDefinition = "TEXT")
+    private Set<UserRole> roles = new HashSet<>();
 
     @Column(name = "is_active", nullable = false)
     @Builder.Default
@@ -142,8 +145,10 @@ public class User extends BaseEntity implements UserDetails, TenantAware {
 
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {
-        // The role is prefixed with "ROLE_" as is the convention in Spring Security.
-        return List.of(new SimpleGrantedAuthority("ROLE_" + role.name()));
+        // Return all roles prefixed with "ROLE_" as is the convention in Spring Security.
+        return roles.stream()
+                .map(role -> new SimpleGrantedAuthority("ROLE_" + role.name()))
+                .collect(Collectors.toList());
     }
 
     @Override
@@ -162,6 +167,10 @@ public class User extends BaseEntity implements UserDetails, TenantAware {
         return true; // Or add a field for this logic
     }
 
+    public void setAccountNonLocked(Boolean accountNonLocked) {
+        this.accountNonLocked = accountNonLocked != null ? accountNonLocked : Boolean.FALSE;
+    }
+
     @Override
     public boolean isCredentialsNonExpired() {
         return true; // Or add a field for this logic
@@ -178,11 +187,32 @@ public class User extends BaseEntity implements UserDetails, TenantAware {
     }
 
     public UserRole getPrimaryRole() {
-        return role;
+        // Return the first role as primary for backward compatibility
+        return roles.isEmpty() ? null : roles.iterator().next();
     }
 
-    public List<UserRole> getRoles() {
-        return List.of(role);
+    public Set<UserRole> getRoles() {
+        return roles;
+    }
+
+    public boolean hasRole(UserRole role) {
+        return roles.contains(role);
+    }
+
+    public void addRole(UserRole role) {
+        if (role != null) {
+            roles.add(role);
+        }
+    }
+
+    public void removeRole(UserRole role) {
+        if (role != null) {
+            roles.remove(role);
+        }
+    }
+
+    public void setRoles(Set<UserRole> newRoles) {
+        this.roles = newRoles != null ? new HashSet<>(newRoles) : new HashSet<>();
     }
 
     public boolean isEmailVerified() {
@@ -200,7 +230,7 @@ public class User extends BaseEntity implements UserDetails, TenantAware {
     }
 
     public Integer getFailedLoginAttempts() {
-        return failedLoginAttempts != null ? failedLoginAttempts : 0;
+        return failedLoginAttempts != null ? failedLoginAttempts : Integer.valueOf(0);
     }
 
     public void setEmailVerificationToken(String token) {

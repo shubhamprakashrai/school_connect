@@ -9,7 +9,10 @@ import jakarta.validation.constraints.Size;
 import lombok.Data;
 
 import java.time.LocalDate;
+import java.util.Set;
+import java.util.HashSet;
 import com.schoolmgmt.model.Teacher;
+import com.schoolmgmt.model.User;
 
 @Data
 public class TeacherCreationRequest {
@@ -17,6 +20,10 @@ public class TeacherCreationRequest {
     @NotNull(message = "user details are required")
     @Schema(description = "user details for the school")
     private UserRequest userRequest;
+
+    @Schema(description = "Additional roles for this teacher (e.g., ADMIN for teacher-admin)", 
+            example = "[ADMIN]")
+    private Set<User.UserRole> additionalRoles = new HashSet<>();
 
 //    @NotBlank(message = "First name is required")
 //    private String firstName;

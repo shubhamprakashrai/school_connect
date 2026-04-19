@@ -24,9 +24,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
-import java.util.List;
-import java.util.Set;
-import java.util.UUID;
+import java.util.*;
 import java.util.stream.Collectors;
 import  com.schoolmgmt.dto.common.UserRequest;
 import com.schoolmgmt.exception.BusinessException;
@@ -40,7 +38,6 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
-import java.util.Optional;
 
 /**
  * Service for user management operations.
@@ -61,19 +58,38 @@ public class UserService {
     /**
      * Generic user creation for any role (ADMIN, TEACHER, STUDENT, PARENT, STAFF)
      *
-     * @param role             Role name
+     * @param role             Role name (for backward compatibility)
      * @param request          UserRequest DTO
      * @param tenantIdentifier Tenant identifier
      * @return Saved User
      */
     public User createUser(String role, UserRequest request, String tenantIdentifier) {
+        Set<User.UserRole> roles = new HashSet<>();
         try {
-            log.info("Starting user creation for tenant {} with role {}", tenantIdentifier, role);
+            roles.add(User.UserRole.valueOf(role.toUpperCase()));
+        } catch (IllegalArgumentException e) {
+            log.error("Invalid role provided: {}", role);
+            throw new BusinessException("Invalid role: " + role);
+        }
+        return createUserWithRoles(roles, request, tenantIdentifier);
+    }
+
+    /**
+     * User creation with multiple roles support
+     *
+     * @param roles            Set of roles for the user
+     * @param request          UserRequest DTO
+     * @param tenantIdentifier Tenant identifier
+     * @return Saved User
+     */
+    public User createUserWithRoles(Set<User.UserRole> roles, UserRequest request, String tenantIdentifier) {
+        try {
+            log.info("Starting user creation for tenant {} with roles {}", tenantIdentifier, roles);
 
             // --- Validate duplicates ---
-            // Check for existing user with same email AND role within the same tenant
+            // Check for existing user with same email within the same tenant
             if (userRepository.existsByEmailAndTenantId(request.getEmail(), tenantIdentifier)) {
-                log.warn("Duplicate email detected in tenant {}: {} with role {}", tenantIdentifier, request.getEmail(), role);
+                log.warn("Duplicate email detected in tenant {}: {} with roles {}", tenantIdentifier, request.getEmail(), roles);
                 throw new BusinessException("Email already registered in this school: " + request.getEmail());
             }
 
@@ -87,13 +103,10 @@ public class UserService {
             String userId = UserIdGeneratorBasedonTenantIdentifies.generateNextCode(tenantIdentifier, lastSequence, 5);
             log.info("Generated userId {} for tenant {}", userId, tenantIdentifier);
 
-            // --- Role conversion ---
-            User.UserRole userRole;
-            try {
-                userRole = User.UserRole.valueOf(role.toUpperCase());
-            } catch (IllegalArgumentException e) {
-                log.error("Invalid role provided: {}", role);
-                throw new BusinessException("Invalid role: " + role);
+            // --- Validate roles ---
+            if (roles == null || roles.isEmpty()) {
+                log.error("No roles provided for user creation");
+                throw new BusinessException("At least one role must be provided");
             }
 
             // --- Temporary password ---
@@ -109,11 +122,11 @@ public class UserService {
                     .firstName(request.getFirstName())
                     .lastName(request.getLastName())
                     .phone(request.getPhone())
-                    .role(userRole)
+                    .roles(roles)
                     .status(User.UserStatus.ACTIVE)
                     .emailVerified(true)
                     .isActive(true)
-                    .temporaryPassword(false) // important for first-time login
+                    .temporaryPassword(true) // important for first-time login
                     .tempPasswordForFirstTime(tempPassword)
                     .avatarUrl(request.getAvatarUrl())
                     .referenceId(request.getReferenceId())
@@ -145,13 +158,13 @@ public class UserService {
 
             // --- Save user ---
             User savedUser = userRepository.save(user);
-            log.info("User created successfully: {} (role: {}) in tenant {}", savedUser.getUsername(), userRole, tenantIdentifier);
+            log.info("User created successfully: {} (roles: {}) in tenant {}", savedUser.getUsername(), roles, tenantIdentifier);
 
 
             //
             // Extract from studentLoginRequired value from the token
 
-            boolean isStudent = userRole == User.UserRole.STUDENT;
+            boolean isStudent = roles.contains(User.UserRole.STUDENT);
             Boolean studentLoginRequired = tenantTokenUtil.extractStudentLoginRequiredFromCurrentToken();
 
             log.debug("Student login validation - isStudent: {}, studentLoginRequired: {}", isStudent, studentLoginRequired);
@@ -198,7 +211,7 @@ public class UserService {
             throw e;
         } catch (Exception e) {
             // Unexpected errors
-            log.error("Failed to create user for tenant {} with role {}: {}", tenantIdentifier, role, e.getMessage(), e);
+            log.error("Failed to create user for tenant {} with roles {}: {}", tenantIdentifier, roles, e.getMessage(), e);
             log.error("Exception type: {}", e.getClass().getName());
             if (e.getCause() != null) {
                 log.error("Root cause: {}", e.getCause().getMessage());
@@ -260,13 +273,17 @@ public class UserService {
     }
 
     /**
-     * Get users by role
+     * Get users by role (supports multi-role system)
      */
     public List<UserResponse> getUsersByRole(String role) {
         String tenantId = TenantContext.requireCurrentTenant();
         User.UserRole userRole = User.UserRole.valueOf(role.toUpperCase());
         
-        List<User> users = userRepository.findByRoleAndTenantId(userRole, tenantId);
+        // Find users who have the specified role in their roles set
+        List<User> users = userRepository.findByTenantId(tenantId).stream()
+                .filter(user -> user.hasRole(userRole))
+                .collect(Collectors.toList());
+        
         return users.stream()
                 .map(this::toUserResponse)
                 .collect(Collectors.toList());
@@ -490,11 +507,12 @@ public class UserService {
     public UserStatistics getUserStatistics() {
         String tenantId = TenantContext.requireCurrentTenant();
         
-        long totalUsers = userRepository.count();
-        long activeUsers = userRepository.countActiveUsersByRoleAndTenant(null, tenantId);
-        long teachers = userRepository.countActiveUsersByRoleAndTenant(User.UserRole.TEACHER, tenantId);
-        long students = userRepository.countActiveUsersByRoleAndTenant(User.UserRole.STUDENT, tenantId);
-        long parents = userRepository.countActiveUsersByRoleAndTenant(User.UserRole.PARENT, tenantId);
+        List<User> allUsers = userRepository.findByTenantId(tenantId);
+        long totalUsers = allUsers.size();
+        long activeUsers = allUsers.stream().filter(u -> u.getStatus() == User.UserStatus.ACTIVE).count();
+        long teachers = allUsers.stream().filter(u -> u.hasRole(User.UserRole.TEACHER) && u.getStatus() == User.UserStatus.ACTIVE).count();
+        long students = allUsers.stream().filter(u -> u.hasRole(User.UserRole.STUDENT) && u.getStatus() == User.UserStatus.ACTIVE).count();
+        long parents = allUsers.stream().filter(u -> u.hasRole(User.UserRole.PARENT) && u.getStatus() == User.UserStatus.ACTIVE).count();
         
         return UserStatistics.builder()
                 .totalUsers(totalUsers)
@@ -517,7 +535,7 @@ public class UserService {
                 .fullName(user.getFullName())
                 .phone(user.getPhone())
                 .avatarUrl(user.getAvatarUrl())
-                .primaryRole(user.getRole().name())
+                .primaryRole(user.getPrimaryRole() != null ? user.getPrimaryRole().name() : null)
                 .roles(user.getRoles().stream()
                         .map(Enum::name)
                         .collect(Collectors.toSet()))

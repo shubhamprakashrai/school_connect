@@ -139,7 +139,7 @@ public class ClassTeacherController {
         try {
             log.debug("REST request to get sections for class teacher: {}", teacherId);
             List<ClassTeacherResponse> response = classTeacherService.getSectionsByClassTeacher(teacherId);
-            log.debug("Found {} sections for teacher: {}", response.size(), teacherId);
+            log.debug("Found {} sections for teacher: {}", String.valueOf(response.size()), teacherId);
 
             return ResponseEntity.ok(ApiResponse.success("Sections retrieved successfully", response));
         } catch (Exception e) {

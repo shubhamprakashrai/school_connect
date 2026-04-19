@@ -1,4 +1,4 @@
-FROM maven:3.9-eclipse-temurin-21 AS build
+FROM maven:3.9-eclipse-temurin-17 AS build
 
 WORKDIR /app
 
@@ -8,12 +8,13 @@ RUN mvn dependency:go-offline -B
 COPY src ./src
 RUN mvn clean package -DskipTests
 
-FROM eclipse-temurin:21-jre-alpine
+FROM eclipse-temurin:17-jre
 
 WORKDIR /app
 
-RUN addgroup -g 1000 spring && \
-    adduser -D -s /bin/sh -u 1000 -G spring spring
+
+RUN groupadd spring && \
+    useradd -g spring -s /bin/bash spring
 
 COPY --from=build /app/target/*.jar app.jar
 
@@ -28,7 +29,4 @@ HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
 EXPOSE 8080
 
 ENTRYPOINT ["java", "-Djava.security.egd=file:/dev/./urandom", "-jar", "app.jar"]
-<<<<<<< Updated upstream
 
-=======
->>>>>>> Stashed changes

@@ -56,7 +56,7 @@ public class AcademicYearService {
                     .name(request.getName())
                     .startDate(request.getStartDate())
                     .endDate(request.getEndDate())
-                    .isActive(request.getIsActive() != null ? request.getIsActive() : false)
+                    .isActive(request.getIsActive() != null ? request.getIsActive() : Boolean.FALSE)
                     .build();
             academicYear.setTenantId(tenantId);
 

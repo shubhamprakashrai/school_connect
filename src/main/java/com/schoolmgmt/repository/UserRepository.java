@@ -86,25 +86,23 @@ public interface UserRepository extends JpaRepository<User, UUID> {
      */
     boolean existsByEmailAndTenantId(String email, String tenantId);
 
-    /**
-     * Check if email exists for a tenant and role
-     */
-    boolean existsByEmailAndRole(String email, User.UserRole role);
-
+    
     /**
      * Find users by tenant ID
      */
     List<User> findByTenantId(String tenantId);
 
-    /**
-     * Find users by role and tenant ID
-     */
-    List<User> findByRoleAndTenantId(User.UserRole role, String tenantId);
-
+    
     /**
      * Find users by status and tenant ID
      */
     List<User> findByStatusAndTenantId(User.UserStatus status, String tenantId);
+
+    /**
+     * Get all distinct tenant IDs
+     */
+    @Query("SELECT DISTINCT u.tenantId FROM User u WHERE u.tenantId IS NOT NULL")
+    List<String> findAllTenantIds();
 
     /**
      * Find user by password reset token
@@ -224,12 +222,7 @@ public interface UserRepository extends JpaRepository<User, UUID> {
     @Query("UPDATE User u SET u.mfaSecret = :secret, u.mfaEnabled = :enabled WHERE u.id = :userId")
     void updateMfaSettings(@Param("userId") UUID userId, @Param("secret") String secret, @Param("enabled") boolean enabled);
 
-    /**
-     * Count users by role and tenant
-     */
-    @Query("SELECT COUNT(u) FROM User u WHERE u.role = :role AND u.tenantId = :tenantId AND u.status = 'ACTIVE'")
-    long countActiveUsersByRoleAndTenant(@Param("role") User.UserRole role, @Param("tenantId") String tenantId);
-
+    
     /**
      * Find users by reference ID and type
      */

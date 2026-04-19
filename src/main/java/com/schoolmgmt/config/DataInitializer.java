@@ -3,6 +3,8 @@ package com.schoolmgmt.config;
 import com.schoolmgmt.model.User;
 import com.schoolmgmt.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
+
+import java.util.Set;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.ApplicationArguments;
 import org.springframework.boot.ApplicationRunner;
@@ -37,7 +39,7 @@ public class DataInitializer implements ApplicationRunner {
                     .firstName("System")
                     .lastName("Administrator")
                     .phone("+1000000000")
-                    .role(User.UserRole.SUPER_ADMIN)
+                    .roles(Set.of(User.UserRole.SUPER_ADMIN))
                     .status(User.UserStatus.ACTIVE)
                     .emailVerified(true)
                     .build();

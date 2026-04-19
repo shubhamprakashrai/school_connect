@@ -88,6 +88,20 @@ public class JwtService {
     }
 
     /**
+     * Generate token for user with all roles
+     */
+    public String generateTokenWithAllRoles(UserDetails userDetails, String tenantId, java.util.Set<String> roles, String username, Boolean studentLoginRequired) {
+        Map<String, Object> extraClaims = new HashMap<>();
+        extraClaims.put("tenantId", tenantId);
+        extraClaims.put("roles", roles);
+        extraClaims.put("role", roles.isEmpty() ? null : roles.iterator().next()); // Keep primary role for backward compatibility
+        extraClaims.put("username", username);
+        extraClaims.put("studentLoginRequired", studentLoginRequired);
+
+        return generateToken(extraClaims, userDetails);
+    }
+
+    /**
      * Generate token with extra claims
      */
     public String generateToken(Map<String, Object> extraClaims, UserDetails userDetails) {

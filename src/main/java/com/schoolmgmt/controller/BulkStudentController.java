@@ -28,7 +28,7 @@ public class BulkStudentController {
     @Operation(summary = "Create multiple students", description = "Create multiple students in bulk with validation and error reporting")
     @PreAuthorize("hasAnyRole('ADMIN', 'SUPER_ADMIN')")
     public ResponseEntity<BulkStudentResponse> createBulkStudents(@Valid @RequestBody BulkStudentRequest request) {
-        log.info("Starting bulk student creation: {} students", request.getStudents().size());
+        log.info("Starting bulk student creation: {} students", String.valueOf(request.getStudents().size()));
         BulkStudentResponse response = bulkStudentService.createBulkStudents(request);
         
         if (response.getFailed() > 0) {
@@ -54,7 +54,7 @@ public class BulkStudentController {
     @Operation(summary = "Validate bulk student data", description = "Validate student data without creating records")
     @PreAuthorize("hasAnyRole('ADMIN', 'SUPER_ADMIN')")
     public ResponseEntity<BulkStudentResponse> validateBulkStudents(@Valid @RequestBody BulkStudentRequest request) {
-        log.info("Validating bulk student data: {} students", request.getStudents().size());
+        log.info("Validating bulk student data: {} students", String.valueOf(request.getStudents().size()));
         BulkStudentResponse response = bulkStudentService.validateBulkStudents(request);
         return ResponseEntity.ok(response);
     }

@@ -81,7 +81,7 @@ public class CalendarEventService {
                     .isWorkingDay(isWorkingDay)
                     .academicYearId(request.getAcademicYearId())
                     .applicableSections(request.getApplicableSections())
-                    .halfDay(request.getHalfDay() != null ? request.getHalfDay() : false)
+                    .halfDay(request.getHalfDay() != null ? request.getHalfDay() : Boolean.FALSE)
                     .holidayType(request.getHolidayType())
                     .build();
             event.setTenantId(tenantId);
@@ -264,7 +264,7 @@ public class CalendarEventService {
             event.setIsWorkingDay(isWorkingDay);
             event.setAcademicYearId(request.getAcademicYearId());
             event.setApplicableSections(request.getApplicableSections());
-            event.setHalfDay(request.getHalfDay() != null ? request.getHalfDay() : false);
+            event.setHalfDay(request.getHalfDay() != null ? request.getHalfDay() : Boolean.FALSE);
             event.setHolidayType(request.getHolidayType());
 
             CalendarEvent updated = calendarEventRepository.save(event);
@@ -322,7 +322,7 @@ public class CalendarEventService {
                 return true; // Default to working day if no tenant context
             }
             Boolean isWorking = calendarEventRepository.isWorkingDay(tenantId, date);
-            return isWorking != null ? isWorking : true; // Default to working day if no event
+            return isWorking != null ? isWorking : Boolean.TRUE; // Default to working day if no event
         } catch (Exception e) {
             log.error("Error checking working day for date {}: {}", date, e.getMessage(), e);
             return true; // Default to working day on error

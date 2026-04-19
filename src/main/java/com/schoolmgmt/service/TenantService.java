@@ -97,7 +97,7 @@ public class TenantService implements TenantServiceInterface {
                 .website(request.getWebsite())
                 .status(Tenant.TenantStatus.PENDING)
                 .subscriptionPlan(Tenant.SubscriptionPlan.valueOf(request.getSubscriptionPlan()))
-                .studentLoginRequired(request.getStudentLoginRequired() != null ? request.getStudentLoginRequired() : false)
+                .studentLoginRequired(request.getStudentLoginRequired() != null ? request.getStudentLoginRequired() : Boolean.FALSE)
                 .createdBy("SYSTEM")
                 .build();
 
@@ -225,15 +225,18 @@ public class TenantService implements TenantServiceInterface {
                 .orElseThrow(() -> new ResourceNotFoundException("Tenant", "identifier", tenantId));
 
         Map<String, Long> usersByRole = new HashMap<>();
+        List<User> allUsers = userRepository.findByTenantId(tenantId);
+        List<User> activeUsers = allUsers.stream().filter(u -> u.getStatus() == User.UserStatus.ACTIVE).collect(Collectors.toList());
+        
         for (User.UserRole role : User.UserRole.values()) {
-            long count = userRepository.countActiveUsersByRoleAndTenant(role, tenantId);
+            long count = activeUsers.stream().filter(u -> u.hasRole(role)).count();
             if (count > 0) usersByRole.put(role.name(), count);
         }
 
         long totalStudents = usersByRole.getOrDefault("STUDENT", 0L);
         long totalTeachers = usersByRole.getOrDefault("TEACHER", 0L);
         long totalParents = usersByRole.getOrDefault("PARENT", 0L);
-        long activeUsers = usersByRole.values().stream().mapToLong(Long::longValue).sum();
+        long activeUsersCount = usersByRole.values().stream().mapToLong(Long::longValue).sum();
 
         Map<String, Long> studentsByClass = new HashMap<>();
         long totalClasses = 0;
@@ -243,7 +246,7 @@ public class TenantService implements TenantServiceInterface {
                 .totalStudents(totalStudents)
                 .totalTeachers(totalTeachers)
                 .totalParents(totalParents)
-                .activeUsers(activeUsers)
+                .activeUsers(activeUsersCount)
                 .totalClasses(totalClasses)
                 .attendancePercentage(attendancePercentage)
                 .storageUsedMb(tenant.getCurrentStorageMb())

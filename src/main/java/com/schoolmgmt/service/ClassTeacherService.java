@@ -194,7 +194,7 @@ public class ClassTeacherService {
 
             List<Section> sections = sectionRepository.findByClassTeacherIdAndTenantId(teacherId, tenantId);
 
-            log.debug("Found {} sections where teacher {} is class teacher", sections.size(), teacherId);
+            log.debug("Found {} sections where teacher {} is class teacher", String.valueOf(sections.size()), teacherId);
 
             return sections.stream()
                     .map(section -> toClassTeacherResponse(section, teacher))
@@ -228,7 +228,7 @@ public class ClassTeacherService {
                     .map(section -> toClassTeacherResponse(section, section.getClassTeacher()))
                     .collect(Collectors.toList());
 
-            log.debug("Found {} class teacher assignments for tenant: {}", responses.size(), tenantId);
+            log.debug("Found {} class teacher assignments for tenant: {}", String.valueOf(responses.size()), tenantId);
 
             return new PageImpl<>(responses, pageable, sections.getTotalElements());
 

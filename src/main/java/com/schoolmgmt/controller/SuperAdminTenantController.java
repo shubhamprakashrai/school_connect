@@ -276,7 +276,7 @@ public class SuperAdminTenantController {
             @RequestBody List<UUID> tenantIds,
             @RequestParam(required = false) String reason) {
         
-        log.info("SuperAdmin bulk activating {} tenants", tenantIds.size());
+        log.info("SuperAdmin bulk activating {} tenants", String.valueOf(tenantIds.size()));
         Map<String, String> results = superAdminTenantService.bulkActivateTenants(tenantIds, reason);
         return ResponseEntity.ok(results);
     }
@@ -292,7 +292,7 @@ public class SuperAdminTenantController {
             @RequestBody List<UUID> tenantIds,
             @RequestParam(required = false) String reason) {
         
-        log.info("SuperAdmin bulk suspending {} tenants", tenantIds.size());
+        log.info("SuperAdmin bulk suspending {} tenants", String.valueOf(tenantIds.size()));
         Map<String, String> results = superAdminTenantService.bulkSuspendTenants(tenantIds, reason);
         return ResponseEntity.ok(results);
     }

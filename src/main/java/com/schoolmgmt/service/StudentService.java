@@ -27,6 +27,8 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.Set;
+
 import java.time.LocalDateTime;
 import java.util.*;
 
@@ -472,7 +474,7 @@ public class StudentService {
                 .password(passwordEncoder.encode(defaultPassword))
                 .firstName(student.getFirstName())
                 .lastName(student.getLastName())
-                .role(User.UserRole.STUDENT)
+                .roles(Set.of(User.UserRole.STUDENT))
                 .status(User.UserStatus.ACTIVE)
                 .emailVerified(false)
                 .isActive(true)

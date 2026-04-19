@@ -44,7 +44,7 @@ public class SubjectController {
     @Operation(summary = "Create multiple subjects", description = "Create multiple subjects at once")
     @PreAuthorize("hasAnyRole('ADMIN', 'SUPER_ADMIN')")
     public ResponseEntity<List<Subject>> createMultipleSubjects(@Valid @RequestBody List<SubjectCreationRequest> requests) {
-        log.info("Creating {} subjects", requests.size());
+        log.info("Creating {} subjects", String.valueOf(requests.size()));
         List<Subject> createdSubjects = subjectService.createMultipleSubjects(requests);
         return ResponseEntity.status(HttpStatus.CREATED).body(createdSubjects);
     }

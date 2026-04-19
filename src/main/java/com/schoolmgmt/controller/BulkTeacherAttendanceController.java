@@ -34,7 +34,7 @@ public class BulkTeacherAttendanceController {
     @Operation(summary = "Mark attendance for multiple teachers", description = "Mark attendance for multiple teachers in bulk with validation and error reporting")
     @PreAuthorize("hasAnyRole('ADMIN', 'SUPER_ADMIN', 'HR_MANAGER')")
     public ResponseEntity<BulkTeacherAttendanceResponse> markBulkTeacherAttendance(@Valid @RequestBody BulkTeacherAttendanceRequest request) {
-        log.info("Starting bulk teacher attendance marking: {} teachers", request.getAttendanceRecords().size());
+        log.info("Starting bulk teacher attendance marking: {} teachers", String.valueOf(request.getAttendanceRecords().size()));
         BulkTeacherAttendanceResponse response = bulkTeacherAttendanceService.createBulkTeacherAttendance(request);
         
         if (response.getFailed() > 0) {
@@ -60,7 +60,7 @@ public class BulkTeacherAttendanceController {
     @Operation(summary = "Validate bulk teacher attendance data", description = "Validate teacher attendance data without creating records")
     @PreAuthorize("hasAnyRole('ADMIN', 'SUPER_ADMIN', 'HR_MANAGER')")
     public ResponseEntity<BulkTeacherAttendanceResponse> validateBulkTeacherAttendance(@Valid @RequestBody BulkTeacherAttendanceRequest request) {
-        log.info("Validating bulk teacher attendance data: {} teachers", request.getAttendanceRecords().size());
+        log.info("Validating bulk teacher attendance data: {} teachers", String.valueOf(request.getAttendanceRecords().size()));
         BulkTeacherAttendanceResponse response = bulkTeacherAttendanceService.validateBulkTeacherAttendance(request);
         return ResponseEntity.ok(response);
     }

@@ -50,7 +50,7 @@ public class SubjectService {
                 .passingMarks(request.getPassingMarks())
                 .academicYear(request.getAcademicYear())
                 .department(request.getDepartment())
-                .isActive(request.getIsActive() != null ? request.getIsActive() : true)
+                .isActive(request.getIsActive() != null ? request.getIsActive() : Boolean.TRUE)
                 .prerequisites(request.getPrerequisites())
                 .learningObjectives(request.getLearningObjectives())
                 .build();
@@ -72,7 +72,7 @@ public class SubjectService {
 
     @Transactional
     public List<Subject> createMultipleSubjects(List<SubjectCreationRequest> requests) {
-        log.info("Creating {} subjects", requests.size());
+        log.info("Creating {} subjects", String.valueOf(requests.size()));
         return requests.stream()
                 .map(this::createSubject)
                 .collect(Collectors.toList());
@@ -133,7 +133,7 @@ public class SubjectService {
         subject.setPassingMarks(request.getPassingMarks());
         subject.setAcademicYear(request.getAcademicYear());
         subject.setDepartment(request.getDepartment());
-        subject.setActive(request.getIsActive() != null ? request.getIsActive() : true);
+        subject.setActive(request.getIsActive() != null ? request.getIsActive() : Boolean.TRUE);
         subject.setPrerequisites(request.getPrerequisites());
         subject.setLearningObjectives(request.getLearningObjectives());
 

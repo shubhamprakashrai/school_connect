@@ -20,12 +20,14 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
+import java.util.Set;
+import java.util.HashSet;
 import java.util.UUID;
 
 @Service
 @RequiredArgsConstructor
 @Slf4j
-public class TeacherService {
+public class  TeacherService {
 
     private final TeacherRepository teacherRepository;
     private final SectionRepository sectionRepository;
@@ -49,7 +51,13 @@ public class TeacherService {
             log.info("Starting teacher creation for tenant: {}", tenantId);
 
             // 2️⃣ Create User account
-            User savedUser = userService.createUser("TEACHER", request.getUserRequest(), tenantId);
+            // Create User with multi-role support
+            Set<User.UserRole> roles = new HashSet<>();
+            roles.add(User.UserRole.TEACHER);
+            if (request.getAdditionalRoles() != null) {
+                roles.addAll(request.getAdditionalRoles());
+            }
+            User savedUser = userService.createUserWithRoles(roles, request.getUserRequest(), tenantId);
             log.info("Teacher user created successfully: {} (userId: {}) for tenant: {}",
                     savedUser.getUsername(), savedUser.getUserId(), tenantId);
 

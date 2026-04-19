@@ -90,7 +90,7 @@ public class Subject extends BaseEntity {
 
     // Helper methods
     public void setActive(Boolean active) {
-        this.isActive = active != null ? active : true;
+        this.isActive = active != null ? active : Boolean.TRUE;
     }
 
     public Boolean getIsActive() {

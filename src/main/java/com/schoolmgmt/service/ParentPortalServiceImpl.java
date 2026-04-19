@@ -61,7 +61,7 @@ public class ParentPortalServiceImpl implements ParentPortalService {
                 .map(studentMapper::toResponse)
                 .collect(Collectors.toList());
         
-        log.info("Found {} students for parent {} in tenant {}", responses.size(), parent.getId(), tenantId);
+        log.info("Found {} students for parent {} in tenant {}", String.valueOf(responses.size()), parent.getId(), tenantId);
         
         return responses;
     }

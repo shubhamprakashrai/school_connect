@@ -75,7 +75,7 @@ public class StudentAttendanceService {
                 attendance = existingAttendance.get();
                 attendance.setStatus(request.getStatus());
                 attendance.setRemarks(request.getRemarks());
-                attendance.setIsHalfDay(request.getIsHalfDay() != null ? request.getIsHalfDay() : false);
+                attendance.setIsHalfDay(request.getIsHalfDay() != null ? request.getIsHalfDay() : Boolean.FALSE);
                 attendance.setHalfDayType(request.getHalfDayType());
                 attendance.markUpdated(markedBy);
                 log.debug("Updating existing attendance record: {}", attendance.getId());
@@ -89,7 +89,7 @@ public class StudentAttendanceService {
                         .remarks(request.getRemarks())
                         .markedBy(markedBy.toString())
                         .markedAt(LocalDateTime.now())
-                        .isHalfDay(request.getIsHalfDay() != null ? request.getIsHalfDay() : false)
+                        .isHalfDay(request.getIsHalfDay() != null ? request.getIsHalfDay() : Boolean.FALSE)
                         .halfDayType(request.getHalfDayType())
                         .build();
                 attendance.setTenantId(tenantId);
@@ -154,7 +154,7 @@ public class StudentAttendanceService {
                         attendance = existingAttendance.get();
                         attendance.setStatus(record.getStatus());
                         attendance.setRemarks(record.getRemarks());
-                        attendance.setIsHalfDay(record.getIsHalfDay() != null ? record.getIsHalfDay() : false);
+                        attendance.setIsHalfDay(record.getIsHalfDay() != null ? record.getIsHalfDay() : Boolean.FALSE);
                         attendance.setHalfDayType(record.getHalfDayType());
                         attendance.markUpdated(markedBy);
                     } else {
@@ -167,7 +167,7 @@ public class StudentAttendanceService {
                                 .remarks(record.getRemarks())
                                 .markedBy(markedBy.toString())
                                 .markedAt(LocalDateTime.now())
-                                .isHalfDay(record.getIsHalfDay() != null ? record.getIsHalfDay() : false)
+                                .isHalfDay(record.getIsHalfDay() != null ? record.getIsHalfDay() : Boolean.FALSE)
                                 .halfDayType(record.getHalfDayType())
                                 .build();
                         attendance.setTenantId(tenantId);
@@ -183,11 +183,11 @@ public class StudentAttendanceService {
             }
 
             if (!errors.isEmpty()) {
-                log.warn("Bulk attendance completed with {} errors: {}", errors.size(), errors);
+                log.warn("Bulk attendance completed with {} errors: {}", String.valueOf(errors.size()), errors);
             }
 
             log.info("Bulk attendance completed: {} records saved, {} errors for section: {} on date: {}",
-                    responses.size(), errors.size(), request.getSectionId(), request.getAttendanceDate());
+                    String.valueOf(responses.size()), String.valueOf(errors.size()), request.getSectionId(), request.getAttendanceDate());
 
             return responses;
 
@@ -346,7 +346,7 @@ public class StudentAttendanceService {
 
             // Calculate attendance percentage
             double attendancePercentage = workingDays > 0
-                    ? ((double) (presentDays != null ? presentDays : 0) / workingDays) * 100
+                    ? ((double) (presentDays != null ? presentDays : Integer.valueOf(0)) / workingDays) * 100
                     : 0.0;
 
             return AttendanceSummaryResponse.builder()
@@ -355,9 +355,9 @@ public class StudentAttendanceService {
                     .startDate(startDate)
                     .endDate(endDate)
                     .totalWorkingDays(workingDays)
-                    .presentDays(presentDays != null ? presentDays : 0)
-                    .absentDays(absentDays != null ? absentDays : 0)
-                    .leaveDays(leaveDays != null ? leaveDays : 0)
+                    .presentDays(presentDays != null ? presentDays : Integer.valueOf(0))
+                    .absentDays(absentDays != null ? absentDays : Integer.valueOf(0))
+                    .leaveDays(leaveDays != null ? leaveDays : Integer.valueOf(0))
                     .lateDays(lateDays)
                     .halfDays(halfDays)
                     .attendancePercentage(Math.round(attendancePercentage * 100.0) / 100.0)
@@ -393,7 +393,7 @@ public class StudentAttendanceService {
             // Update fields
             attendance.setStatus(request.getStatus());
             attendance.setRemarks(request.getRemarks());
-            attendance.setIsHalfDay(request.getIsHalfDay() != null ? request.getIsHalfDay() : false);
+            attendance.setIsHalfDay(request.getIsHalfDay() != null ? request.getIsHalfDay() : Boolean.FALSE);
             attendance.setHalfDayType(request.getHalfDayType());
             attendance.markUpdated(updatedBy);
 

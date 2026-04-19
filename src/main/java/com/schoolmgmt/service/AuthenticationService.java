@@ -74,8 +74,8 @@ public class AuthenticationService {
                 } else {
                     // Unlock if lock period has expired
                     userRepository.unlockUserAccount(user.getId());
-                    user.setAccountNonLocked(true);
-                    user.setFailedLoginAttempts(0);
+                    user.setAccountNonLocked(Boolean.TRUE);
+                    user.setFailedLoginAttempts(Integer.valueOf(0));
                 }
             }
 
@@ -108,7 +108,7 @@ public class AuthenticationService {
                                 .email(user.getEmail())
                                 .firstName(user.getFirstName())
                                 .lastName(user.getLastName())
-                                .role(user.getRole().name())
+                                .role(user.getPrimaryRole() != null ? user.getPrimaryRole().name() : null)
                                 .tenantId(user.getTenantId())
                                 .emailVerified(user.isEmailVerified())
                                 .mfaEnabled(user.isMfaEnabled())
@@ -127,10 +127,13 @@ public class AuthenticationService {
 
             // Get student login required flag from tenant
             Optional<Tenant> tenant = tenantRepository.findByIdentifier(user.getTenantId());
-            Boolean studentLoginRequired = tenant.isPresent() ? tenant.get().getStudentLoginRequired() : false;
+            Boolean studentLoginRequired = tenant.isPresent() ? tenant.get().getStudentLoginRequired() : Boolean.FALSE;
 
-            // Generate tokens
-            String accessToken = jwtService.generateToken(user, user.getTenantId(), user.getRole().name(), user.getUsername(), studentLoginRequired);
+            // Generate tokens with all roles
+            java.util.Set<String> allRoles = user.getRoles().stream()
+                    .map(Enum::name)
+                    .collect(java.util.stream.Collectors.toSet());
+            String accessToken = jwtService.generateTokenWithAllRoles(user, user.getTenantId(), allRoles, user.getUsername(), studentLoginRequired);
             String refreshToken = jwtService.generateRefreshToken(user);
 
             // Build response
@@ -139,7 +142,7 @@ public class AuthenticationService {
                     .email(user.getEmail())
                     .firstName(user.getFirstName())
                     .lastName(user.getLastName())
-                    .role(user.getRole().name())
+                    .role(user.getPrimaryRole() != null ? user.getPrimaryRole().name() : null)
                     .tenantId(user.getTenantId())
                     .emailVerified(user.isEmailVerified())
                     .mfaEnabled(user.isMfaEnabled())
@@ -191,10 +194,10 @@ public class AuthenticationService {
                     .firstName(request.getFirstName())
                     .lastName(request.getLastName())
                     .phone(request.getPhone())
-                    .role(role)
+                    .roles(Set.of(role))
                     .status(User.UserStatus.PENDING)
-                    .emailVerified(false)
-                    .isActive(false)
+                    .emailVerified(Boolean.FALSE)
+                    .isActive(Boolean.FALSE)
                     .emailVerificationToken(generateToken())
                     .build();
 
@@ -236,17 +239,20 @@ public class AuthenticationService {
 
             // Get student login required flag from tenant
             Optional<Tenant> tenant = tenantRepository.findByIdentifier(tenantId);
-            Boolean studentLoginRequired = tenant.isPresent() ? tenant.get().getStudentLoginRequired() : false;
+            Boolean studentLoginRequired = tenant.isPresent() ? tenant.get().getStudentLoginRequired() : Boolean.FALSE;
 
-            // Generate new access token
-            String newAccessToken = jwtService.generateToken(user, tenantId, user.getRole().name(), user.getUsername(), studentLoginRequired);
+            // Generate new access token with all roles
+            java.util.Set<String> allRoles = user.getRoles().stream()
+                    .map(Enum::name)
+                    .collect(java.util.stream.Collectors.toSet());
+            String newAccessToken = jwtService.generateTokenWithAllRoles(user, tenantId, allRoles, user.getUsername(), studentLoginRequired);
 
             UserInfo userInfo = UserInfo.builder()
                     .id(user.getId().toString())
                     .email(user.getEmail())
                     .firstName(user.getFirstName())
                     .lastName(user.getLastName())
-                    .role(user.getRole().name())
+                    .role(user.getPrimaryRole() != null ? user.getPrimaryRole().name() : null)
                     .tenantId(tenantId)
                     .emailVerified(user.isEmailVerified())
                     .mfaEnabled(user.isMfaEnabled())
@@ -315,7 +321,7 @@ public class AuthenticationService {
             // 4. Update password + flags in DB
             int updated = userRepository.setInitialPasswordReset(user.getId(), encodedNewPassword, LocalDateTime.now());
 //            userRepository.updatingIsTemporaryPasswordValue(false);
-            log.info("Password update result = {}", updated);
+            log.info("Password update result = {}", String.valueOf(updated));
 
             if (updated == 0) {
                 throw new PasswordChangeException("Password update failed, no row updated!");

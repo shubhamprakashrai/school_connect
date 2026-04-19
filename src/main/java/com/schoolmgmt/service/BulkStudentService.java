@@ -431,7 +431,7 @@ public class BulkStudentService {
         int successfulInSection = 0;
         int failedInSection = 0;
         
-        log.info("Processing {} students for section: {}", sectionStudents.size(), sectionKey);
+        log.info("Processing {} students for section: {}", String.valueOf(sectionStudents.size()), sectionKey);
         
         // Get section details for summary
         Section section = sectionRepository.findById(UUID.fromString(sectionKey))

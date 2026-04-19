@@ -99,7 +99,7 @@ public class ClassService {
 
         List<Section> sections = sectionRepository.findByClassTeacherIdAndTenantId(teacherId, tenantId);
         
-        log.info("Found {} sections assigned to teacher {}", sections.size(), teacher.getFullName());
+        log.info("Found {} sections assigned to teacher {}", String.valueOf(sections.size()), teacher.getFullName());
         return sections;
     }
 
