@@ -45,8 +45,9 @@ public class RegisterRequest {
     @Schema(description = "Last name", example = "Doe")
     private String lastName;
     
-    @Pattern(regexp = "^[+]?[0-9]{10,15}$", message = "Invalid phone number")
-    @Schema(description = "Phone number", example = "+1234567890")
+    @NotBlank(message = "Phone number is required")
+    @Pattern(regexp = "^[0-9]{10}$", message = "Phone number must be 10 digits")
+    @Schema(description = "Phone number", example = "9876543210")
     private String phone;
     
     @NotBlank(message = "Role is required")

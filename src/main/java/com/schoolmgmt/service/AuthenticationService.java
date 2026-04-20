@@ -58,11 +58,68 @@ public class AuthenticationService {
     /**
      * Authenticate user and generate JWT tokens
      */
-    public AuthResponse authenticate(LoginRequest request) {
+    public AuthResponse authenticate(LoginRequest request, String tenantId) {
+        log.info("Login attempt - Email: {}, Phone: {}, Tenant: {}",
+            request.getEmail() != null ? maskEmail(request.getEmail()) : "not provided",
+            request.getPhone() != null ? maskPhone(request.getPhone()) : "not provided",
+            tenantId != null ? tenantId : "will be auto-detected");
+
+        // Validate that at least one identifier is provided
+        if (!request.isValid()) {
+            log.warn("Login failed: Neither email nor phone provided");
+            throw new IllegalArgumentException("Either email or phone number must be provided");
+        }
+
         try {
-            // Find user across all tenants
-            User user = userRepository.findByUsernameOrEmail(request.getUsername())
-                    .orElseThrow(() -> new UsernameNotFoundException("Invalid credentials"));
+            Optional<User> userOptional = Optional.empty();
+            String finalTenantId = tenantId;
+
+            // Auto-detect tenantId if not provided
+            if (tenantId == null) {
+                log.debug("Tenant ID not provided, attempting to auto-detect from email/phone");
+
+                // Try to find user by email globally
+                if (request.getEmail() != null && !request.getEmail().trim().isEmpty()) {
+                    log.debug("Searching for user by email globally: {}", maskEmail(request.getEmail()));
+                    userOptional = userRepository.findByEmail(request.getEmail());
+                }
+
+                // If not found by email, try phone globally
+                if (userOptional.isEmpty() && request.getPhone() != null && !request.getPhone().trim().isEmpty()) {
+                    log.debug("Searching for user by phone globally: {}", maskPhone(request.getPhone()));
+                    userOptional = userRepository.findByPhone(request.getPhone());
+                }
+
+                // If user found, use their tenantId
+                if (userOptional.isPresent()) {
+                    finalTenantId = userOptional.get().getTenantId();
+                    log.info("Auto-detected tenant ID: {} from user credentials", finalTenantId);
+                } else {
+                    log.warn("User not found globally with provided credentials");
+                    throw new UsernameNotFoundException("Invalid credentials");
+                }
+            } else {
+                // Find user by email and tenant ID if email is provided (priority)
+                if (request.getEmail() != null && !request.getEmail().trim().isEmpty()) {
+                    log.debug("Searching for user by email: {} in tenant: {}", maskEmail(request.getEmail()), finalTenantId);
+                    userOptional = userRepository.findByEmailAndTenantId(request.getEmail(), finalTenantId);
+                }
+                // Find user by phone and tenant ID if phone is provided and email not found or not provided
+                if (userOptional.isEmpty() && request.getPhone() != null && !request.getPhone().trim().isEmpty()) {
+                    log.debug("Searching for user by phone: {} in tenant: {}", maskPhone(request.getPhone()), finalTenantId);
+                    userOptional = userRepository.findByPhoneAndTenantId(request.getPhone(), finalTenantId);
+                }
+            }
+
+            // Find user in the specified tenant
+            if (userOptional.isEmpty()) {
+                log.warn("User not found for provided credentials in tenant: {}", finalTenantId);
+                throw new UsernameNotFoundException("Invalid credentials");
+            }
+            User user = userOptional.get();
+
+            log.info("User found for login - User ID: {}, Email: {}, Phone: {}, Tenant: {}",
+                user.getId(), maskEmail(user.getEmail()), maskPhone(user.getPhone()), finalTenantId);
 
             // Set tenant context based on user's tenant
             TenantContext.setCurrentTenant(user.getTenantId());
@@ -70,31 +127,36 @@ public class AuthenticationService {
             // Check if account is locked
             if (!user.isAccountNonLocked()) {
                 if (user.getLockedUntil() != null && LocalDateTime.now().isBefore(user.getLockedUntil())) {
+                    log.warn("Account locked for user: {} (ID: {})", maskEmail(user.getEmail()), user.getId());
                     throw new BadCredentialsException("Account is locked. Please try again later.");
                 } else {
                     // Unlock if lock period has expired
                     userRepository.unlockUserAccount(user.getId());
                     user.setAccountNonLocked(Boolean.TRUE);
                     user.setFailedLoginAttempts(Integer.valueOf(0));
+                    log.info("Account unlocked for user: {} (ID: {})", maskEmail(user.getEmail()), user.getId());
                 }
             }
 
             // Check if email is verified
             if (!user.isEmailVerified()) {
+                log.warn("Email not verified for user: {} (ID: {})", maskEmail(user.getEmail()), user.getId());
                 throw new BadCredentialsException("Email not verified. Please check your email for verification link.");
             }
 
-            // Authenticate
+            // Authenticate using the user's actual username (required by Spring Security)
             try {
                 authenticationManager.authenticate(
                         new UsernamePasswordAuthenticationToken(
-                                request.getUsername(),
+                                user.getUsername(), // Use actual username from user record
                                 request.getPassword()
                         )
                 );
+                log.info("Authentication successful for user: {} (ID: {})", maskEmail(user.getEmail()), user.getId());
             } catch (BadCredentialsException e) {
                 // Increment failed login attempts
                 handleFailedLogin(user);
+                log.warn("Invalid password for user: {} (ID: {})", maskEmail(user.getEmail()), user.getId());
                 throw new BadCredentialsException("Invalid credentials");
             }
 
@@ -169,14 +231,25 @@ public class AuthenticationService {
         try {
             TenantContext.setCurrentTenant(tenantId);
 
+            log.info("Registration attempt - Email: {}, Phone: {}, Username: {}",
+                maskEmail(request.getEmail()), maskPhone(request.getPhone()), request.getUsername());
+
             // Check if username exists
             if (userRepository.existsByUsernameAndTenantId(request.getUsername(), tenantId)) {
+                log.warn("Registration failed: Username already exists - {}", request.getUsername());
                 throw new IllegalArgumentException("Username already exists");
             }
 
             // Check if email exists
             if (userRepository.existsByEmailAndTenantId(request.getEmail(), tenantId)) {
+                log.warn("Registration failed: Email already exists - {}", maskEmail(request.getEmail()));
                 throw new IllegalArgumentException("Email already exists");
+            }
+
+            // Check if phone exists
+            if (userRepository.existsByPhoneAndTenantId(request.getPhone(), tenantId)) {
+                log.warn("Registration failed: Phone number already exists - {}", maskPhone(request.getPhone()));
+                throw new IllegalArgumentException("Phone number already exists");
             }
 
             // Parse role
@@ -341,26 +414,80 @@ public class AuthenticationService {
 
     /**
      * Initiate password reset
+     * Accepts either email or phone for user identification, but always sends reset email to user's registered email
      */
-    public void initiatePasswordReset(PasswordResetRequest request) {
-        // Find user by email across all tenants
-        userRepository.findByEmail(request.getEmail())
-            .ifPresent(user -> {
-                try {
-                    TenantContext.setCurrentTenant(user.getTenantId());
+    public void initiatePasswordReset(PasswordResetRequest request, String tenantId) {
+        log.info("Password reset request received - Email: {}, Phone: {}, Tenant: {}",
+            request.getEmail() != null ? maskEmail(request.getEmail()) : "not provided",
+            request.getPhone() != null ? maskPhone(request.getPhone()) : "not provided",
+            tenantId);
 
-                    String resetToken = generateToken();
-                    LocalDateTime expiry = LocalDateTime.now().plusHours(1);
-                    
-                    userRepository.setPasswordResetToken(user.getId(), resetToken, expiry);
-                    emailService.sendPasswordResetEmail(user, resetToken);
-                    
-                    log.info("Password reset initiated for: {}", user.getEmail());
-                } finally {
-                    TenantContext.clear();
-                }
-            });
-        // Don't reveal if email exists or not
+        // Validate that at least one identifier is provided
+        if (!request.isValid()) {
+            log.warn("Password reset request failed: Neither email nor phone provided");
+            throw new IllegalArgumentException("Either email or phone number must be provided");
+        }
+
+        Optional<User> userOptional = Optional.empty();
+
+        // Find user by email and tenant ID if email is provided
+        if (request.getEmail() != null && !request.getEmail().trim().isEmpty()) {
+            log.debug("Searching for user by email: {} in tenant: {}", maskEmail(request.getEmail()), tenantId);
+            userOptional = userRepository.findByEmailAndTenantId(request.getEmail(), tenantId);
+        }
+        // Find user by phone and tenant ID if phone is provided and email not found or not provided
+        if (userOptional.isEmpty() && request.getPhone() != null && !request.getPhone().trim().isEmpty()) {
+            log.debug("Searching for user by phone: {} in tenant: {}", maskPhone(request.getPhone()), tenantId);
+            userOptional = userRepository.findByPhoneAndTenantId(request.getPhone(), tenantId);
+        }
+
+        // Process password reset if user found
+        userOptional.ifPresentOrElse(user -> {
+            try {
+                TenantContext.setCurrentTenant(user.getTenantId());
+                log.info("User found for password reset - User ID: {}, Email: {}, Phone: {}, Tenant: {}",
+                    user.getId(), maskEmail(user.getEmail()), maskPhone(user.getPhone()), tenantId);
+
+                String resetToken = generateToken();
+                LocalDateTime expiry = LocalDateTime.now().plusHours(1);
+
+                userRepository.setPasswordResetToken(user.getId(), resetToken, expiry);
+                emailService.sendPasswordResetEmail(user, resetToken);
+
+                log.info("Password reset initiated successfully for user: {} (ID: {}) in tenant: {}",
+                    maskEmail(user.getEmail()), user.getId(), tenantId);
+            } catch (Exception e) {
+                log.error("Error initiating password reset for user: {} (ID: {}) in tenant: {}",
+                    maskEmail(user.getEmail()), user.getId(), tenantId, e);
+                throw new RuntimeException("Failed to initiate password reset", e);
+            } finally {
+                TenantContext.clear();
+            }
+        }, () -> {
+            // User not found - log but don't reveal to prevent enumeration
+            log.info("No user found for the provided credentials in tenant: {}. Password reset not initiated.", tenantId);
+        });
+
+        // Always return success to prevent email/phone enumeration
+        log.debug("Password reset request processed successfully");
+    }
+
+    /**
+     * Mask email for logging (show first 2 chars and domain)
+     */
+    private String maskEmail(String email) {
+        if (email == null || email.isEmpty()) return "not provided";
+        int atIndex = email.indexOf('@');
+        if (atIndex <= 2) return "***@***";
+        return email.substring(0, 2) + "***" + email.substring(atIndex);
+    }
+
+    /**
+     * Mask phone for logging (show first 2 and last 2 digits)
+     */
+    private String maskPhone(String phone) {
+        if (phone == null || phone.length() < 4) return "***";
+        return phone.substring(0, 2) + "****" + phone.substring(phone.length() - 2);
     }
 
 

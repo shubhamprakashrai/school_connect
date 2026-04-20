@@ -55,8 +55,8 @@ public class CreateTeacherRequest {
     private String email;
     
     @NotBlank(message = "Phone is required")
-    @Pattern(regexp = "^[+]?[0-9]{10,15}$")
-    @Schema(description = "Phone number", example = "+1234567890")
+    @Pattern(regexp = "^[0-9]{10}$", message = "Phone number must be 10 digits")
+    @Schema(description = "Phone number", example = "9876543210")
     private String phone;
     
     @Schema(description = "Address")

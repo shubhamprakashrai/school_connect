@@ -32,6 +32,11 @@ public interface UserRepository extends JpaRepository<User, UUID> {
     Optional<User> findByEmailAndTenantId(String email, String tenantId);
 
     /**
+     * Find user by phone and tenant ID
+     */
+    Optional<User> findByPhoneAndTenantId(String phone, String tenantId);
+
+    /**
      * Find user by username or email and tenant ID
      */
     @Query("SELECT u FROM User u WHERE (u.username = :usernameOrEmail OR u.email = :usernameOrEmail) AND u.tenantId = :tenantId")
@@ -48,6 +53,12 @@ public interface UserRepository extends JpaRepository<User, UUID> {
      */
     @Query("SELECT u FROM User u WHERE u.email = :email")
     Optional<User> findByEmail(@Param("email") String email);
+
+    /**
+     * Find user by phone across all tenants
+     */
+    @Query("SELECT u FROM User u WHERE u.phone = :phone")
+    Optional<User> findByPhone(@Param("phone") String phone);
 
     /**
      * Check if username exists for a tenant

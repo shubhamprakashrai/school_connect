@@ -34,16 +34,21 @@ public class AuthenticationController {
     private final AuthenticationService authenticationService;
 
     @PostMapping("/login")
-    @Operation(summary = "User login", description = "Authenticate user and return JWT tokens")
+    @Operation(summary = "User login", description = "Authenticate user using email or phone number and return JWT tokens. Tenant ID is auto-detected from email/phone if not provided in header.")
     @ApiResponses(value = {
         @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "Login successful",
             content = @Content(schema = @Schema(implementation = AuthResponse.class))),
         @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "401", description = "Invalid credentials"),
         @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "403", description = "Account locked or inactive")
     })
-    public ResponseEntity<AuthResponse> login(@Valid @RequestBody LoginRequest request) {
-        log.info("Login attempt for user: {}", request.getUsername());
-        AuthResponse response = authenticationService.authenticate(request);
+    public ResponseEntity<AuthResponse> login(
+            @Valid @RequestBody LoginRequest request,
+            @RequestHeader(value = "X-Tenant-ID", required = false) String tenantId) {
+        log.info("Login attempt - Email: {}, Phone: {}, Tenant: {}",
+            request.getEmail() != null ? request.getEmail() : "not provided",
+            request.getPhone() != null ? request.getPhone() : "not provided",
+            tenantId != null ? tenantId : "will be auto-detected");
+        AuthResponse response = authenticationService.authenticate(request, tenantId);
         return ResponseEntity.ok(response);
     }
 
@@ -90,16 +95,21 @@ public class AuthenticationController {
     }
 
     @PostMapping("/forgot-password")
-    @Operation(summary = "Request password reset", description = "Send password reset link to email")
+    @Operation(summary = "Request password reset", description = "Send password reset link to email. Provide either email or phone number for identification. Requires tenant ID header.")
     @ApiResponses(value = {
-        @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "Reset link sent if email exists"),
-        @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "400", description = "Invalid input")
+        @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "Reset link sent if user exists"),
+        @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "400", description = "Invalid input - neither email nor phone provided")
     })
-    public ResponseEntity<ApiResponse> forgotPassword(@Valid @RequestBody PasswordResetRequest request) {
-        log.info("Password reset requested for email: {}", request.getEmail());
-        authenticationService.initiatePasswordReset(request);
-        // Always return success to prevent email enumeration
-        return ResponseEntity.ok(ApiResponse.success("If the email exists, a password reset link has been sent"));
+    public ResponseEntity<ApiResponse> forgotPassword(
+            @Valid @RequestBody PasswordResetRequest request,
+            @RequestHeader(value = "X-Tenant-ID", required = true) String tenantId) {
+        log.info("Password reset requested - Email: {}, Phone: {}, Tenant: {}",
+            request.getEmail() != null ? request.getEmail() : "not provided",
+            request.getPhone() != null ? request.getPhone() : "not provided",
+            tenantId);
+        authenticationService.initiatePasswordReset(request, tenantId);
+        // Always return success to prevent email/phone enumeration
+        return ResponseEntity.ok(ApiResponse.success("If the account exists, a password reset link has been sent to the registered email address"));
     }
 
     @PostMapping("/reset-password")

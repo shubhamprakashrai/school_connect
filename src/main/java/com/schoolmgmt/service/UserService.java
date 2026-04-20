@@ -14,6 +14,7 @@ import com.schoolmgmt.security.JwtService;
 import com.schoolmgmt.util.TenantContext;
 import com.schoolmgmt.util.TenantTokenUtil;
 import jakarta.servlet.http.HttpServletRequest;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.RandomStringUtils;
@@ -63,7 +64,7 @@ public class UserService {
      * @param tenantIdentifier Tenant identifier
      * @return Saved User
      */
-    public User createUser(String role, UserRequest request, String tenantIdentifier) {
+    public User createUser(String role, @Valid UserRequest request, String tenantIdentifier) {
         Set<User.UserRole> roles = new HashSet<>();
         try {
             roles.add(User.UserRole.valueOf(role.toUpperCase()));
@@ -82,11 +83,37 @@ public class UserService {
      * @param tenantIdentifier Tenant identifier
      * @return Saved User
      */
-    public User createUserWithRoles(Set<User.UserRole> roles, UserRequest request, String tenantIdentifier) {
+    public User createUserWithRoles(Set<User.UserRole> roles, @Valid UserRequest request, String tenantIdentifier) {
         try {
             log.info("Starting user creation for tenant {} with roles {}", tenantIdentifier, roles);
 
+            // --- Manual validation for phone format (10 digits) ---
+            if (request.getPhone() != null) {
+                String cleanPhone = request.getPhone().trim();
+                if (!cleanPhone.matches("^[0-9]{10}$")) {
+                    log.warn("Invalid phone format for user creation: {}", cleanPhone);
+                    throw new BusinessException("Phone number must be exactly 10 digits (no spaces or special characters): " + cleanPhone);
+                }
+                if (cleanPhone.length() != 10) {
+                    log.warn("Invalid phone length for user creation: {} digits", cleanPhone.length());
+                    throw new BusinessException("Phone number must be exactly 10 digits, provided: " + cleanPhone.length() + " digits");
+                }
+            }
+
             // --- Validate duplicates ---
+            // For ADMIN, check globally across all tenants
+            if (roles.contains(User.UserRole.ADMIN)) {
+                log.info("ADMIN role detected, performing global duplicate checks");
+                if (userRepository.existsByEmail(request.getEmail())) {
+                    log.warn("Duplicate email detected globally for ADMIN: {}", request.getEmail());
+                    throw new BusinessException("Email already registered in the system: " + request.getEmail());
+                }
+                if (request.getPhone() != null && userRepository.existsByPhone(request.getPhone())) {
+                    log.warn("Duplicate phone detected globally for ADMIN: {}", request.getPhone());
+                    throw new BusinessException("Phone number already exists in the system: " + request.getPhone());
+                }
+            }
+
             // Check for existing user with same email within the same tenant
             if (userRepository.existsByEmailAndTenantId(request.getEmail(), tenantIdentifier)) {
                 log.warn("Duplicate email detected in tenant {}: {} with roles {}", tenantIdentifier, request.getEmail(), roles);

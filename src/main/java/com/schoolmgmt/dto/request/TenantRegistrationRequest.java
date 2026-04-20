@@ -36,8 +36,8 @@ public class TenantRegistrationRequest {
     private String email;
     
     @NotBlank(message = "Phone is required")
-    @Pattern(regexp = "^[+]?[0-9]{10,15}$", message = "Invalid phone number")
-    @Schema(description = "Primary contact phone", example = "+1234567890")
+    @Pattern(regexp = "^[0-9]{10}$", message = "Phone number must be 10 digits")
+    @Schema(description = "Primary contact phone", example = "9876543210")
     private String phone;
     
     @NotBlank(message = "Address is required")

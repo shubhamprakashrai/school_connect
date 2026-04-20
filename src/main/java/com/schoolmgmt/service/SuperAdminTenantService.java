@@ -95,17 +95,29 @@ public class SuperAdminTenantService {
 //        if (request.getUserRequest() != null) {
 //            userRequest = createTenantAdminUser(savedTenant,request.getUserRequest());
 //        }
-//        
-        // create superadmin user
 
-        User superadmin = userService.createUser("SUPER_ADMIN", request.getUserRequest(), savedTenant.getIdentifier());
+        // create admin user for the school
+        User admin = null;
+        try {
+            admin = userService.createUser("ADMIN", request.getUserRequest(), savedTenant.getIdentifier());
+            log.info("Admin user created successfully for tenant: {}", savedTenant.getIdentifier());
+        } catch (BusinessException e) {
+            // Provide more specific error message for admin duplicates
+            if (e.getMessage().contains("Email already registered in the system")) {
+                throw new BusinessException("Admin email already registered in the system: " + request.getUserRequest().getEmail());
+            } else if (e.getMessage().contains("Phone number already exists in the system")) {
+                throw new BusinessException("Admin phone number already exists in the system: " + request.getUserRequest().getPhone());
+            } else {
+                throw e; // Re-throw other business exceptions as-is
+            }
+        }
 
 
 
         // TODO: Class creation logic temporarily disabled for testing
         log.info("Tenant created successfully without classes - class creation will be tested separately");
 
-        log.info("SuperAdmin successfully created tenant: {} with identifier: {}", 
+        log.info("Admin successfully created for tenant: {} with identifier: {}",
                 savedTenant.getName(), savedTenant.getIdentifier());
 
         return toTenantRegistrationResponse(savedTenant);
@@ -458,13 +470,69 @@ public class SuperAdminTenantService {
     // Private helper methods
 
     private void validateTenantRequest(TenantRegistrationRequest request) {
+        log.info("========== STARTING TENANT REQUEST VALIDATION ==========");
+        log.info("Validating tenant request - Subdomain: {}, Email: {}, Phone: {}",
+            request.getSubdomain(), request.getEmail(), request.getPhone());
+
         if (tenantRepository.existsBySubdomain(request.getSubdomain())) {
+            log.warn("Subdomain already exists: {}", request.getSubdomain());
             throw new BusinessException("Subdomain already exists: " + request.getSubdomain());
         }
 
-        if (tenantRepository.existsByEmail(request.getEmail())) {
-            throw new BusinessException("Email already registered: " + request.getEmail());
+        // Validate phone format (exactly 10 digits, no spaces, no special characters)
+        if (request.getPhone() != null) {
+            String cleanPhone = request.getPhone().trim();
+            log.info("Validating tenant phone format: {}", cleanPhone);
+            if (!cleanPhone.matches("^[0-9]{10}$")) {
+                log.warn("Invalid tenant phone format: {}", cleanPhone);
+                throw new BusinessException("Tenant phone number must be exactly 10 digits (no spaces or special characters): " + request.getPhone());
+            }
+            if (cleanPhone.length() != 10) {
+                log.warn("Invalid tenant phone length: {} digits", cleanPhone.length());
+                throw new BusinessException("Tenant phone number must be exactly 10 digits, provided: " + cleanPhone.length() + " digits");
+            }
         }
+
+        if (tenantRepository.existsByEmail(request.getEmail())) {
+            log.warn("Tenant email already registered: {}", request.getEmail());
+            throw new BusinessException("Tenant email already registered: " + request.getEmail());
+        }
+
+        // Check tenant phone duplicate against other tenants
+        if (request.getPhone() != null) {
+            log.info("Checking tenant phone duplicate: {}", request.getPhone());
+
+            // Explicit check using repository method
+            boolean tenantPhoneExists = tenantRepository.existsByPhone(request.getPhone());
+            log.info("Tenant phone exists in tenants table: {}", tenantPhoneExists);
+
+            if (tenantPhoneExists) {
+                log.warn("Tenant phone already registered: {}", request.getPhone());
+                throw new BusinessException("Tenant phone number already registered: " + request.getPhone());
+            }
+
+            // Check if tenant phone is already registered as a user phone (global duplicate check)
+            boolean userPhoneExists = userRepository.existsByPhone(request.getPhone());
+            log.info("Tenant phone exists in users table: {}", userPhoneExists);
+
+            if (userPhoneExists) {
+                log.warn("Tenant phone already registered as user: {}", request.getPhone());
+                throw new BusinessException("Tenant phone number already registered as a user in the system: " + request.getPhone());
+            }
+
+            // Check if tenant phone matches admin phone (should be different)
+            if (request.getUserRequest() != null && request.getUserRequest().getPhone() != null) {
+                String adminPhone = request.getUserRequest().getPhone().trim();
+                String tenantPhone = request.getPhone().trim();
+                log.info("Checking if tenant phone equals admin phone - Tenant: {}, Admin: {}", tenantPhone, adminPhone);
+                if (tenantPhone.equals(adminPhone)) {
+                    log.warn("Tenant phone and admin phone are the same: {}", tenantPhone);
+                    throw new BusinessException("Tenant phone number and admin phone number cannot be the same: " + request.getPhone());
+                }
+            }
+        }
+
+        log.info("========== TENANT REQUEST VALIDATION COMPLETED SUCCESSFULLY ==========");
     }
 
     private void setDefaultLimits(Tenant tenant, String subscriptionPlan) {
