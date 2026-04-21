@@ -2,6 +2,7 @@ package com.schoolmgmt.config;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.cache.CacheManager;
 import org.springframework.cache.annotation.EnableCaching;
 import org.springframework.context.annotation.Bean;
@@ -18,9 +19,11 @@ import java.time.Duration;
 
 /**
  * Redis configuration for caching and session management.
+ * Only enabled when app.redis.enabled=true
  */
 @Configuration
 @EnableCaching
+@ConditionalOnProperty(name = "app.redis.enabled", havingValue = "true", matchIfMissing = false)
 public class RedisConfig {
 
     @Bean
