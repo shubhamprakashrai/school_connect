@@ -2,6 +2,9 @@ package com.schoolmgmt.service;
 
 import com.schoolmgmt.dto.request.CreateSchoolClassRequest;
 import com.schoolmgmt.dto.request.CreateSectionRequest;
+import com.schoolmgmt.dto.request.UpdateSchoolClassRequest;
+import com.schoolmgmt.dto.request.UpdateSectionRequest;
+import com.schoolmgmt.exception.ResourceNotFoundException;
 import com.schoolmgmt.dto.response.SchoolClassResponse;
 import com.schoolmgmt.dto.response.SectionResponse;
 import com.schoolmgmt.model.SchoolClass;
@@ -157,6 +160,40 @@ public class ClassSectionService {
                 .collect(Collectors.toList());
     }
     
+    public SchoolClassResponse updateClass(UUID classId, UpdateSchoolClassRequest request) {
+        SchoolClass cls = schoolClassRepository.findById(classId)
+            .orElseThrow(() -> new ResourceNotFoundException("Class not found: " + classId));
+        cls.setName(request.getName());
+        if (request.getDescription() != null) cls.setDescription(request.getDescription());
+        SchoolClass saved = schoolClassRepository.save(cls);
+        return buildClassResponse(saved);
+    }
+
+    public void deleteClass(UUID classId) {
+        if (!schoolClassRepository.existsById(classId)) {
+            throw new ResourceNotFoundException("Class not found: " + classId);
+        }
+        schoolClassRepository.deleteById(classId);
+    }
+
+    public SectionResponse updateSection(UUID sectionId, UpdateSectionRequest request) {
+        Section section = sectionRepository.findById(sectionId)
+            .orElseThrow(() -> new ResourceNotFoundException("Section not found: " + sectionId));
+        section.setName(request.getName());
+        if (request.getCapacity() != null) section.setCapacity(request.getCapacity());
+        Section saved = sectionRepository.save(section);
+        SchoolClass schoolClass = schoolClassRepository.findById(saved.getSchoolClassId())
+            .orElseThrow(() -> new ResourceNotFoundException("Class not found: " + saved.getSchoolClassId()));
+        return buildSectionResponse(saved, schoolClass);
+    }
+
+    public void deleteSection(UUID sectionId) {
+        if (!sectionRepository.existsById(sectionId)) {
+            throw new ResourceNotFoundException("Section not found: " + sectionId);
+        }
+        sectionRepository.deleteById(sectionId);
+    }
+
     private SchoolClassResponse buildClassResponse(SchoolClass schoolClass) {
         List<SectionResponse> sections = getSectionsByClassId(schoolClass.getId());
         

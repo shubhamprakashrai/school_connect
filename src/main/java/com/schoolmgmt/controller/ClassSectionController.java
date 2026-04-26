@@ -3,6 +3,8 @@ package com.schoolmgmt.controller;
 import com.schoolmgmt.dto.ApiResponse;
 import com.schoolmgmt.dto.request.CreateSchoolClassRequest;
 import com.schoolmgmt.dto.request.CreateSectionRequest;
+import com.schoolmgmt.dto.request.UpdateSchoolClassRequest;
+import com.schoolmgmt.dto.request.UpdateSectionRequest;
 import com.schoolmgmt.dto.response.SchoolClassResponse;
 import com.schoolmgmt.dto.response.SectionResponse;
 import com.schoolmgmt.service.ClassSectionService;
@@ -105,5 +107,43 @@ public class ClassSectionController {
         log.info("Creating default section for class: {}", classId);
         List<SectionResponse> sections = classSectionService.createDefaultSection(classId);
         return ResponseEntity.status(HttpStatus.CREATED).body(sections);
+    }
+
+    @PutMapping("/{classId}")
+    @Operation(summary = "Update class")
+    @PreAuthorize("hasAnyRole('ADMIN', 'SUPER_ADMIN')")
+    public ResponseEntity<SchoolClassResponse> updateClass(
+            @PathVariable UUID classId,
+            @Valid @RequestBody UpdateSchoolClassRequest request) {
+        log.info("Updating class: {}", classId);
+        return ResponseEntity.ok(classSectionService.updateClass(classId, request));
+    }
+
+    @DeleteMapping("/{classId}")
+    @Operation(summary = "Delete class")
+    @PreAuthorize("hasAnyRole('ADMIN', 'SUPER_ADMIN')")
+    public ResponseEntity<Void> deleteClass(@PathVariable UUID classId) {
+        log.info("Deleting class: {}", classId);
+        classSectionService.deleteClass(classId);
+        return ResponseEntity.noContent().build();
+    }
+
+    @PutMapping("/sections/{sectionId}")
+    @Operation(summary = "Update section")
+    @PreAuthorize("hasAnyRole('ADMIN', 'SUPER_ADMIN')")
+    public ResponseEntity<SectionResponse> updateSection(
+            @PathVariable UUID sectionId,
+            @Valid @RequestBody UpdateSectionRequest request) {
+        log.info("Updating section: {}", sectionId);
+        return ResponseEntity.ok(classSectionService.updateSection(sectionId, request));
+    }
+
+    @DeleteMapping("/sections/{sectionId}")
+    @Operation(summary = "Delete section")
+    @PreAuthorize("hasAnyRole('ADMIN', 'SUPER_ADMIN')")
+    public ResponseEntity<Void> deleteSection(@PathVariable UUID sectionId) {
+        log.info("Deleting section: {}", sectionId);
+        classSectionService.deleteSection(sectionId);
+        return ResponseEntity.noContent().build();
     }
 }
