@@ -118,11 +118,15 @@ public class AuthenticationService {
             }
             User user = userOptional.get();
 
+
             log.info("User found for login - User ID: {}, Email: {}, Phone: {}, Tenant: {}",
                 user.getId(), maskEmail(user.getEmail()), maskPhone(user.getPhone()), finalTenantId);
 
             // Set tenant context based on user's tenant
             TenantContext.setCurrentTenant(user.getTenantId());
+
+
+
 
             // Check if account is locked
             if (!user.isAccountNonLocked()) {
