@@ -30,6 +30,7 @@ import java.util.*;
 public class StudentBulkService {
 
     private final StudentRepository studentRepository;
+    private final StudentService studentService;
 
     private static final String[] CSV_HEADERS = {
             "rollNumber", "firstName", "lastName", "dateOfBirth", "gender",
@@ -229,8 +230,8 @@ public class StudentBulkService {
 
         // Validate required fields
         if (rollNumber == null || rollNumber.isBlank()) {
-            errors.add(buildError(rowNumber, "rollNumber", "Roll number is required", rollNumber));
-            hasError = true;
+            rollNumber = studentService.generateNextStudentId();
+            log.info("Auto-generated roll number for row {}: {}", rowNumber, rollNumber);
         }
         if (firstName == null || firstName.isBlank()) {
             errors.add(buildError(rowNumber, "firstName", "First name is required", firstName));
